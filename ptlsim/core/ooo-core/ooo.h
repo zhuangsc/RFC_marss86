@@ -12,7 +12,7 @@
 
 #ifndef _OOOCORE_H_
 #define _OOOCORE_H_
-fjkdfkjdkfjkje
+
 #include <ptlsim.h>
 #include <basecore.h>
 #include <branchpred.h>
