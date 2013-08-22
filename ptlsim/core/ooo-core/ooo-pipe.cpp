@@ -540,7 +540,7 @@ bool ThreadContext::fetch() {
         } else {
             /* still have reserved entries left, continue fetching */
         }
-        ///    }
+        ///    
 #endif
 
         if unlikely ((fetchrip.rip == config.start_log_at_rip) && (fetchrip.rip != 0xffffffffffffffffULL)) {
@@ -1185,6 +1185,7 @@ static inline int find_first_set_bit(W32 v) {
  * @return 1 iff all operands were ready at dispatch time
  */
 bool ReorderBufferEntry::find_sources() {
+
     int operands_still_needed = 0;
 
     issueq_tag_t uopids[MAX_OPERANDS];
@@ -1215,7 +1216,7 @@ bool ReorderBufferEntry::find_sources() {
             /* No need to wait for it */
             uopids[operand] = 0;
             preready[operand] = 1;
-        }
+        	}
 
         if likely (source_physreg.nonnull()) {
             per_physregfile_stats_update(dispatch.source,
@@ -1236,7 +1237,7 @@ bool ReorderBufferEntry::find_sources() {
 
     bool ok;
 
-    issueq_operation_on_cluster_with_result(getcore(), cluster, ok, insert(get_tag(), uopids, preready));
+    issueq_operation_on_cluster_with_result(getcore(), cluster, ok, insert(get_tag(), uopids, preready,this));
 
     ThreadContext& thread = getthread();
 
@@ -1370,7 +1371,6 @@ int ThreadContext::dispatch() {
         }
 
 #endif
-
         int operands_still_needed = rob->find_sources();
 
         if likely (operands_still_needed) {
@@ -1763,6 +1763,7 @@ int ReorderBufferEntry::commit() {
     bool found_eom = 0;
     ReorderBufferEntry* cant_commit_subrob = NULL;
 
+    //At this moment, all_ready_to_commit is set to TRUE
     foreach_forward_from(thread.ROB, this, j) {
         ReorderBufferEntry& subrob = thread.ROB[j];
 

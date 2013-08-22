@@ -63,6 +63,7 @@ void IssueQueue<size, operandcount>::reset(W8 coreid, OooCore* core_) {
     allready = 0;
     foreach (i, operandcount) {
         tags[i].reset();
+		tags_cached[i].reset();
     }
     uopids.reset();
 
@@ -157,10 +158,82 @@ void IssueQueue<size, operandcount>::reset(W8 coreid, W8 threadid,
  */
 template <int size, int operandcount>
 void IssueQueue<size, operandcount>::clock() {
+
     allready = (valid & (~issued));
-    foreach (operand, operandcount) {
+    foreach (operand, operandcount) 
         allready &= ~tags[operand].valid;
-    }
+
+    (*this).clock_rf_cache();
+    foreach (operand, operandcount)
+		allready &= ~tags_cached[operand].valid;
+}
+
+/**
+ * RF cache extension:
+ * @brief Check for possible fetching
+ *
+ * This function first traverse the issue queue to find uncached register values that are on-demand
+ * send the request to RF. 
+ */
+template <int size, int operandcount>
+void IssueQueue<size, operandcount>::clock_rf_cache(){
+
+    int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
+    //Tick the RF-RF cache bus
+    foreach (i, PHYS_REG_FILE_COUNT)
+		(*core).physregfiles[i].cache_tick();
+	//Traverse the whole issue queue
+    foreach(i,size){
+		//Invalid entries are omitted
+    	if (!valid[i]||ROB_IQ[i]==0) continue;
+
+		foreach (operand, operandcount){
+			PhysicalRegister* reg;
+			reg=ROB_IQ[i]->operands[operand];
+			rf_idx=reg->rfid;
+			r_idx=reg->idx;
+			if ((*core).physregfiles[rf_idx].cache_activated())
+				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
+					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+			
+			if (reg->state == PHYSREG_BYPASS || reg->state == PHYSREG_WRITTEN)
+				tags_cached[operand].invalidateslot(i);
+			if (operand==RS)
+				tags_cached[operand].invalidateslot(i);
+			if (operand==RC)
+				if unlikely(isstore(ROB_IQ[i]->uop.opcode) && !ROB_IQ[i]->load_store_second_phase)
+					tags_cached[operand].invalidateslot(i);
+			if (reg->archreg >= REG_temp0)
+				tags_cached[operand].invalidateslot(i);
+		}
+
+		others_waiting=0;
+		foreach (operand,operandcount)
+			others_waiting+=tags[operand].isvalid(i);
+		if (others_waiting) continue;
+
+    	foreach (operand,operandcount){
+			rf_idx=ROB_IQ[i]->operands[operand]->rfid;
+			r_idx=ROB_IQ[i]->operands[operand]->idx;
+    		if (tags_cached[operand].isvalid(i)){
+				foreach (oper,operandcount){
+					switch (oper){
+						case RA:
+							r_idx_RA=ROB_IQ[i]->operands[oper]->idx;
+							break;
+						case RB:
+							r_idx_RB=ROB_IQ[i]->operands[oper]->idx;
+							break;
+						case RC:
+							r_idx_RC=ROB_IQ[i]->operands[oper]->idx;
+							break;
+					}
+				}
+				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC))
+					tags_cached[operand].invalidateslot(i);
+			}
+		}
+	}
 }
 
 /**
@@ -175,8 +248,9 @@ void IssueQueue<size, operandcount>::clock() {
  * @return True if entry is successfully added else false.
  */
 template <int size, int operandcount>
-bool IssueQueue<size, operandcount>::insert(tag_t uopid, const tag_t* operands, const tag_t* preready) {
-    if unlikely (count == size)
+bool IssueQueue<size, operandcount>::insert(tag_t uopid, const tag_t* operands, const tag_t* preready, ReorderBufferEntry* rob) {
+
+	if unlikely (count == size)
         return false;
 
     assert(count < size);
@@ -189,11 +263,14 @@ bool IssueQueue<size, operandcount>::insert(tag_t uopid, const tag_t* operands, 
 
     valid[slot] = 1;
     issued[slot] = 0;
+    ROB_IQ[slot]=rob;
 
     foreach (operand, operandcount) {
         if likely (preready[operand])
             tags[operand].invalidateslot(slot);
         else tags[operand].insertslot(slot, operands[operand]);
+	
+    	tags_cached[operand].invalidateslot(slot);
     }
 
     return true;
@@ -213,8 +290,16 @@ bool IssueQueue<size, operandcount>::insert(tag_t uopid, const tag_t* operands, 
 template <int size, int operandcount>
 bool IssueQueue<size, operandcount>::broadcast(tag_t uopid) {
     vec_t tagvec = assoc_t::prep(uopid);
+	int slot=-1;
+    foreach (operand, operandcount) {
+		if (slot<0)
+			slot=tags[operand].search(tagvec);
+		if (slot>=0){
+			ROB_IQ[slot]->operands[operand]->bypassed=1;
+		}
 
-    foreach (operand, operandcount) tags[operand].invalidate(tagvec);
+		tags[operand].invalidate(tagvec);
+	}
 
     return true;
 }
@@ -258,17 +343,19 @@ int IssueQueue<size, operandcount>::issue(int previd) {
  */
 template <int size, int operandcount>
 bool IssueQueue<size, operandcount>::replay(int slot, const tag_t* operands, const tag_t* preready) {
+
     assert(valid[slot]);
     assert(issued[slot]);
 
     issued[slot] = 0;
+    //ReorderBufferEntry* rob=ROB_IQ[slot];
 
     foreach (operand, operandcount) {
         if (preready[operand])
             tags[operand].invalidateslot(slot);
         else tags[operand].insertslot(slot, operands[operand]);
+		tags_cached[operand].invalidateslot(slot);
     }
-
     return true;
 }
 
@@ -292,12 +379,12 @@ bool IssueQueue<size, operandcount>::replay(int slot, const tag_t* operands, con
  *
  */
 template <int size, int operandcount>
-bool IssueQueue<size, operandcount>::switch_to_end(int slot, const tag_t* operands, const tag_t* preready) {
+bool IssueQueue<size, operandcount>::switch_to_end(int slot, const tag_t* operands, const tag_t* preready, ReorderBufferEntry* rob) {
     tag_t uopid = uopids[slot];
     /* remove */
     remove(slot);
     /* insert at end: */
-    insert(uopid, operands, preready);
+    insert(uopid, operands, preready, rob);
     return true;
 }
 
@@ -318,15 +405,23 @@ bool IssueQueue<size, operandcount>::remove(int slot) {
 
     foreach (i, operandcount) {
         tags[i].collapse(slot);
+    	tags_cached[i].collapse(slot);
     }
 
     valid = valid.remove(slot, 1);
     issued = issued.remove(slot, 1);
     allready = allready.remove(slot, 1);
-
+	remove_rob(slot);
     count--;
     assert(count >= 0);
     return true;
+}
+
+template <int size, int operandcount>
+void IssueQueue<size, operandcount>::remove_rob(int slot){
+	for (int i = slot; i<size-1; i++)
+		ROB_IQ[i] = ROB_IQ[i+1];
+	ROB_IQ[size-1]=0;
 }
 
 /**
@@ -351,6 +446,7 @@ ostream& IssueQueue<size, operandcount>::print(ostream& os) const {
         foreach (j, operandcount) {
             if (j) os << ' ';
             tags[j].printid(os, i);
+			tags_cached[j].printid(os,i);
         }
         os << endl;
     }
@@ -411,8 +507,16 @@ static void decode_tag(issueq_tag_t tag, int& threadid, int& idx) {
  *  -1 if there was an exception and we should stop issuing this cycle
  */
 int ReorderBufferEntry::issue() {
+
     OooCore& core = getcore();
     ThreadContext& thread = getthread();
+
+	foreach (operand, MAX_OPERANDS){
+		int rf_index,r_index;
+		rf_index=operands[operand]->rfid;
+		r_index=operands[operand]->idx;
+		core.physregfiles[rf_index].read_cache(r_index);
+	}
 
     /*
      *  We keep TLB miss handling entries into issue queue
@@ -541,7 +645,6 @@ int ReorderBufferEntry::issue() {
           * Invalid data propagated through operands: mark output as
           * invalid and don't even execute the uop at all.
           */
-
         state.st.invalid = 1;
         state.reg.rdflags = FLAG_INV;
         state.reg.rddata = EXCEPTION_Propagate;
@@ -2422,6 +2525,7 @@ void ReorderBufferEntry::fencewakeup() {
  * a deadlock if there is not enough room in the issue queue.
  */
 void ReorderBufferEntry::replay() {
+
     OooCore& core = getcore();
     ThreadContext& thread = getthread();
 
@@ -2491,7 +2595,7 @@ void ReorderBufferEntry::replay_locked() {
         changestate(get_ready_to_issue_list());
     }
 
-    issueq_operation_on_cluster(core, cluster, switch_to_end(iqslot,  uopids, preready));
+    issueq_operation_on_cluster(core, cluster, switch_to_end(iqslot,  uopids, preready, this));
 }
 
 
@@ -2610,6 +2714,7 @@ int OooCore::issue(int cluster) {
  * forwarding networks.
  */
 int ReorderBufferEntry::forward() {
+
     assert(inrange((int)forward_cycle, 0, (MAX_FORWARDING_LATENCY+1)-1));
 
     W32 targets = forward_at_cycle_lut[cluster][forward_cycle];

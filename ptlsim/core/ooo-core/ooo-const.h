@@ -244,7 +244,7 @@ namespace OOO_CORE_MODEL {
 #else
     const int MAX_CLUSTERS = 1;
 
-    const int MAX_FORWARDING_LATENCY = 0;
+    const int MAX_FORWARDING_LATENCY = 1;
 
     static const int ISSUE_QUEUE_SIZE = OOO_ISSUE_Q_SIZE;
 #endif
@@ -271,6 +271,8 @@ namespace OOO_CORE_MODEL {
 #endif
 
     extern const char* phys_reg_file_names[PHYS_REG_FILE_COUNT];
+	extern const char* cache_buses_numbers[9];
+	extern const char* writebacker_names[2];
 
 };
 

@@ -352,6 +352,8 @@ namespace OOO_CORE_MODEL {
 
             assoc_t uopids;
             assoc_t tags[operandcount];
+			assoc_t tags_cached[operandcount];
+			ReorderBufferEntry* ROB_IQ[size];
 
              /*
               * States:
@@ -375,6 +377,9 @@ namespace OOO_CORE_MODEL {
 
             IssueQueue(){
                 issueq_id = issueq_id_seq++;
+				foreach (i,size){
+					ROB_IQ[i]=0;
+				}
             }
             void set_reserved_entries(int num) { reserved_entries = num; }
             bool reset_shared_entries() {
@@ -411,12 +416,14 @@ namespace OOO_CORE_MODEL {
             void reset(W8 coreid, OooCore* core);
             void reset(W8 coreid, W8 threadid, OooCore* core);
             void clock();
-            bool insert(tag_t uopid, const tag_t* operands, const tag_t* preready);
+			void clock_rf_cache();
+            bool insert(tag_t uopid, const tag_t* operands, const tag_t* preready, ReorderBufferEntry* rob);
             bool broadcast(tag_t uopid);
             int issue(int previd = -1);
             bool replay(int slot, const tag_t* operands, const tag_t* preready);
-            bool switch_to_end(int slot, const tag_t* operands, const tag_t* preready);
+            bool switch_to_end(int slot, const tag_t* operands, const tag_t* preready, ReorderBufferEntry* rob);
             bool remove(int slot);
+			void remove_rob (int slot);
 
             ostream& print(ostream& os) const;
             void tally_broadcast_matches(tag_t sourceid, const bitvec<size>& mask, int operand);
@@ -425,7 +432,10 @@ namespace OOO_CORE_MODEL {
               * Replay a uop that has already issued once.
               * The caller may add or reset dependencies here as needed.
               */
-
+			
+			//For the simplicity of simulation, the replay mechanism only reset the issued[slot] bit
+			//Because anyway the data of the source registers are read from the PhysicalRegister structure
+			//In a real processor, the whereabout of the data need to be reallocated
             bool replay(int slot) {
                 issued[slot] = 0;
                 return true;
@@ -670,6 +680,7 @@ namespace OOO_CORE_MODEL {
      */
 
     struct PhysicalRegister: public selfqueuelink {
+
         ReorderBufferEntry* rob;
         W64 data;
         W16 flags;
@@ -682,6 +693,9 @@ namespace OOO_CORE_MODEL {
         W8  all_consumers_sourced_from_bypass:1;
         W16s refcount;
         W8 threadid;
+		
+		//The Register Cache register-level varible
+		int bypassed;
 
         StateList& get_state_list(int state) const;
         StateList& get_state_list() const { return get_state_list(this->state); }
@@ -692,7 +706,7 @@ namespace OOO_CORE_MODEL {
             get_state_list(state).enqueue(this);
         }
 
-        void init(W8 coreid, int rfid, int idx, OooCore* core) {
+        void init(W8 coreid, int rfid, int idx, OooCore* core, int cache_read_latency) {
             this->coreid = coreid;
             this->core = core;
             this->rfid = rfid;
@@ -720,17 +734,13 @@ namespace OOO_CORE_MODEL {
         bool nonnull() const { return (index() != PHYS_REG_NULL); }
         bool allocated() const { return (state != PHYSREG_FREE); }
         void commit() { changestate(PHYSREG_ARCH); }
-        void complete() { changestate(PHYSREG_BYPASS); }
-        void writeback() { changestate(PHYSREG_WRITTEN); }
+        void complete() { cache_info_reset();changestate(PHYSREG_BYPASS); }
+        void writeback() ; 
 
-        void free() {
-            changestate(PHYSREG_FREE);
-            rob = 0;
-            refcount = 0;
-            threadid = 0xff;
-            all_consumers_sourced_from_bypass = 1;
-            flags = flags & ~(FLAG_INV | FLAG_WAIT);
-        }
+		void cache_info_reset(){
+			bypassed=0;
+		}
+        void free() ;
 
         private:
         void reset() {
@@ -767,6 +777,7 @@ namespace OOO_CORE_MODEL {
      */
 
     struct PhysicalRegisterFile: public array<PhysicalRegister, MAX_PHYS_REG_FILE_SIZE> {
+
         byte coreid;
         OooCore *core;
         byte rfid;
@@ -775,6 +786,33 @@ namespace OOO_CORE_MODEL {
         StateList states[MAX_PHYSREG_STATE];
         W64 allocations;
         W64 frees;
+
+     	static const int RF_CACHE_SIZE=8; //Register File Cache Size
+    	static const int CACHE_READ_LATENCY=1; //Latency
+        static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
+    	int cache_enabled;
+		
+
+    	struct cache_entries{
+    		int idx;
+    		W64 reference;
+    		int valid;
+    		ReorderBufferEntry* rob_in_cache;
+    	};
+		struct struct_cache{
+			struct cache_entries cache_entry[RF_CACHE_SIZE];
+			int cache_entry_occupancy;
+		}rf_cache;
+
+		struct bus_entries{
+			int idx;
+			int index_RA; int index_RB; int index_RC;
+			int latency;
+		};
+		struct struct_bus{
+			struct bus_entries bus_entry[RF_CACHE_BANDWIDTH];
+			int request_on_the_fly;
+		} rf_cache_bus;
 
         PhysicalRegisterFile() { }
 
@@ -788,6 +826,22 @@ namespace OOO_CORE_MODEL {
         }
 
         bool cleanup();
+
+		inline int cache_activated() { return cache_enabled;}
+    	int is_cached(int index);
+        void cache_tick();
+    	void read_cache(int index);
+    	int read_request(int index,int index_RA,int index_RB,int index_RC);
+		void add_cache_entry (int entry, int idx);
+
+    	void bus_entry_insert(int index,int index_RA,int index_RB,int index_RC);
+    	void bus_entry_remove(int index);
+		void writebacker_stats(int);
+
+		void to_cache(int index, int writebacker);
+    	int min_entry(int* ban_list,int ban_list_size);
+		int ban_list_add(int* ban_list, int index, int ban_list_index);
+		int entry_valid(int outgoing_entry, int incoming_entry);
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }
@@ -952,6 +1006,7 @@ namespace OOO_CORE_MODEL {
      * @brief represent a OOO  thread in SMT core.
      */
     struct ThreadContext {
+
         OooCore& core;
         OooCore& getcore() { return core; }
         ThreadContext& getthread() { return *this; }
@@ -1100,6 +1155,7 @@ namespace OOO_CORE_MODEL {
     // checkpointed core
     //
     struct OooCore: public BaseCore {
+        //W8 coreid;
         OooCore& getcore() { return *this; }
 
         /* This is only used for stats collection. By default if core is
@@ -1290,6 +1346,8 @@ namespace OOO_CORE_MODEL {
         void update_stats();
 
         void check_ctx_changes();
+
+        //W8 get_coreid() { return coreid; }
 
 		void dump_configuration(YAML::Emitter &out) const;
     };

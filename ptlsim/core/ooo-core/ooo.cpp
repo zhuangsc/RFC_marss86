@@ -57,6 +57,10 @@ namespace OOO_CORE_MODEL {
 
     const char* phys_reg_file_names[PHYS_REG_FILE_COUNT] = {"int", "fp", "st", "br"};
 
+	const char* cache_buses_numbers[9]={"0","1","2","3","4","5","6","7","8"};
+
+	const char* writebacker_names[2]={"ISSUE","WB"};
+
     const char* fu_names[FU_COUNT] = {
         "ldu0",
         "stu0",
@@ -233,6 +237,8 @@ OooCore::OooCore(BaseMachine& machine_, W8 num_threads,
 : BaseCore(machine_, name)
     , core_stats("core", this)
 {
+    //coreid = machine.get_next_coreid();
+
     if(!machine_.get_option(name, "threads", threadcount)) {
         threadcount = 1;
     }
@@ -352,6 +358,24 @@ static void OOO_CORE_MODEL::print_list_of_state_lists(ostream& os, const ListOfS
     }
 }
 
+void PhysicalRegister::writeback() { 
+	if ((*this).core->physregfiles[rfid].cache_activated())
+		if (!bypassed)
+			(*this).core->physregfiles[rfid].to_cache(idx,1);
+	bypassed=0;
+	changestate(PHYSREG_WRITTEN);
+
+}
+
+void PhysicalRegister::free(){
+	changestate(PHYSREG_FREE);
+	rob=0;
+	refcount=0;
+	threadid=0xff;
+	all_consumers_sourced_from_bypass=1;
+	flags = flags & ~(FLAG_INV | FLAG_WAIT);
+}
+
 /**
  * @brief Initialize the Physical Register File
  */
@@ -372,9 +396,32 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
         states[i].init(sb, getcore().physreg_states);
     }
 
+    //Only the register file of INT and FP have cache structure
+	if (this->rfid < 2)
+		this->cache_enabled = 1;
+	else
+		this->cache_enabled = 0;
+
     foreach (i, size) {
-        (*this)[i].init(coreid, rfid, i, core);
+        (*this)[i].init(coreid, rfid, i, core, CACHE_READ_LATENCY);
     }
+
+	this->rf_cache.cache_entry_occupancy = 0;
+    foreach (i, RF_CACHE_SIZE){
+		this->rf_cache.cache_entry[i].idx = -1;
+		this->rf_cache.cache_entry[i].reference = 0;
+		this->rf_cache.cache_entry[i].valid = 0;
+		this->rf_cache.cache_entry[i].rob_in_cache = 0;
+	}
+
+	this->rf_cache_bus.request_on_the_fly = 0;
+	foreach (i, RF_CACHE_BANDWIDTH){
+		this->rf_cache_bus.bus_entry[i].idx = -1;
+		this->rf_cache_bus.bus_entry[i].latency = -1;
+		this->rf_cache_bus.bus_entry[i].index_RA = -1;
+		this->rf_cache_bus.bus_entry[i].index_RB = -1;
+		this->rf_cache_bus.bus_entry[i].index_RC = -1;
+	}
 }
 
 /**
@@ -392,6 +439,10 @@ PhysicalRegister* PhysicalRegisterFile::alloc(W8 threadid, int r) {
     return physreg;
 }
 
+void PhysicalRegisterFile::writebacker_stats(int writebacker){
+	core->getthread().thread_stats.writeback_whom[writebacker]++;
+}
+
 /**
  * @brief print the physcial register file
  *
@@ -404,6 +455,21 @@ ostream& PhysicalRegisterFile::print(ostream& os) const {
     foreach (i, size) {
         os << (*this)[i], endl;
     }
+	os << "RegisterFile Cache Entry:", endl;
+	foreach (i, RF_CACHE_SIZE){
+		os << "Entry: " , i , " Index: ", rf_cache.cache_entry[i].idx;
+		os << "  Reference: ", rf_cache.cache_entry[i].reference, " Valid: ", rf_cache.cache_entry[i].valid;
+		os << " ROB: ", rf_cache.cache_entry[i].rob_in_cache, endl;
+	}
+	os << "RegisterFile Cache Bus Traffic:", endl;
+	foreach (i, RF_CACHE_BANDWIDTH){
+		os << "Bus: ", i, " Index: ", rf_cache_bus.bus_entry[i].idx;
+		os << " Latency: ", rf_cache_bus.bus_entry[i].latency;
+		os << " RA: ", rf_cache_bus.bus_entry[i].index_RA;
+		os << " RB: ", rf_cache_bus.bus_entry[i].index_RB;
+		os << " RC: ", rf_cache_bus.bus_entry[i].index_RC;
+		os << endl;
+	}
     return os;
 }
 
@@ -451,6 +517,182 @@ void PhysicalRegisterFile::reset() {
 StateList& PhysicalRegister::get_state_list(int s) const {
     return core->physregfiles[rfid].states[s];
 }
+
+int PhysicalRegisterFile::is_cached(int index){
+	if (!index) return 1;
+	foreach (i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].valid && rf_cache.cache_entry[i].idx == index)
+			return 1;
+	}
+	return 0;
+}
+
+void PhysicalRegisterFile::read_cache(int index) {
+	if (!cache_activated()) return;
+	else{
+		foreach(i, RF_CACHE_SIZE){
+			if(rf_cache.cache_entry[i].valid && rf_cache.cache_entry[i].idx == index){
+				rf_cache.cache_entry[i].reference = sim_cycle;
+				break;
+			}
+		}
+	}
+}
+
+int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int index_RC){ 
+	if (!cache_activated()) return 100; //Should never be reached, arbitrary number
+	//Already at the RF-cache
+	if (is_cached(index))
+		return 0;
+	//Already in transmission, return the cycles need to complete
+	foreach (i, RF_CACHE_BANDWIDTH)
+		if (rf_cache_bus.bus_entry[i].idx == index)
+			return rf_cache_bus.bus_entry[i].latency;
+	if(rf_cache_bus.request_on_the_fly < RF_CACHE_BANDWIDTH){
+		bus_entry_insert(index,index_RA,index_RB,index_RC);
+		return CACHE_READ_LATENCY;
+	}
+	return CACHE_READ_LATENCY;
+}
+
+void PhysicalRegisterFile::cache_tick() {
+	if (!cache_activated()) return;
+	int request_idx;
+	foreach (i,RF_CACHE_BANDWIDTH){
+		if (rf_cache_bus.bus_entry[i].idx >= 0){
+			request_idx = rf_cache_bus.bus_entry[i].idx;
+			rf_cache_bus.bus_entry[i].latency--;
+			if (!rf_cache_bus.bus_entry[i].latency){ 
+				to_cache(request_idx , 0);
+				bus_entry_remove(request_idx);
+			}
+		}
+	}
+}
+
+void PhysicalRegisterFile::bus_entry_insert(int index,int index_RA,int index_RB,int index_RC){
+	foreach(i, RF_CACHE_BANDWIDTH)
+		if (rf_cache_bus.bus_entry[i].idx < 0){
+			rf_cache_bus.bus_entry[i].idx = index;
+			rf_cache_bus.bus_entry[i].latency = CACHE_READ_LATENCY;
+			rf_cache_bus.bus_entry[i].index_RA = index_RA;
+			rf_cache_bus.bus_entry[i].index_RB = index_RB;
+			rf_cache_bus.bus_entry[i].index_RC = index_RC;
+			break;
+		}
+	rf_cache_bus.request_on_the_fly++;
+}
+
+void PhysicalRegisterFile::bus_entry_remove(int index){
+	foreach(i, RF_CACHE_BANDWIDTH)
+		if (rf_cache_bus.bus_entry[i].idx == index){
+			rf_cache_bus.bus_entry[i].idx = -1;
+			rf_cache_bus.bus_entry[i].latency = -1;
+			rf_cache_bus.bus_entry[i].index_RA = -1;
+			rf_cache_bus.bus_entry[i].index_RB = -1;
+			rf_cache_bus.bus_entry[i].index_RC = -1;
+			break;
+		}
+	rf_cache_bus.request_on_the_fly--;
+}
+
+void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
+	rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
+	rf_cache.cache_entry[entry].reference = sim_cycle;
+	rf_cache.cache_entry[entry].valid = 1;
+	rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
+}
+
+void PhysicalRegisterFile::to_cache(int index, int writebacker){
+	int slot;
+	writebacker_stats(writebacker);
+	if (rf_cache.cache_entry_occupancy < RF_CACHE_SIZE){
+		foreach(i, RF_CACHE_SIZE){
+			if (!rf_cache.cache_entry[i].valid){
+				add_cache_entry(i, index);
+				rf_cache.cache_entry_occupancy++;
+				break;
+			}
+		}
+	}else{
+		int ban_list[RF_CACHE_SIZE]={-8};
+		int ban_list_index=0;
+		foreach(i,RF_CACHE_SIZE){
+			slot=min_entry(ban_list,ban_list_index);
+			if(entry_valid(slot,index)) break;
+			ban_list_index=ban_list_add(ban_list,slot,ban_list_index);
+		}
+		if (slot<0) return; //This should never be reached
+		add_cache_entry(slot, index);
+	}
+}
+
+int PhysicalRegisterFile::min_entry(int* ban_list,int ban_list_size){
+	int slot,is_banned;
+	W64 min;
+	slot = -1;
+	min = sim_cycle;
+	foreach(index,RF_CACHE_SIZE){
+		is_banned = 0;
+		foreach(i, ban_list_size){
+			if (rf_cache.cache_entry[index].valid && (rf_cache.cache_entry[index].idx == ban_list[i])){
+				is_banned = 1;
+				break;
+			}
+		}
+		if (is_banned) continue;
+		if(min >= rf_cache.cache_entry[index].reference){
+			min = rf_cache.cache_entry[index].reference;
+			slot = index;
+		}
+	}
+	return slot;
+}
+
+int PhysicalRegisterFile::ban_list_add(int* ban_list, int index, int ban_list_index){
+	if (index>=0 && ban_list_index<RF_CACHE_SIZE)
+	ban_list[ban_list_index++]=rf_cache.cache_entry[index].idx;
+	return ban_list_index;
+}
+
+int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
+	if (outgoing_entry<0) return 0;
+	int match=0,result;
+	foreach (i, RF_CACHE_BANDWIDTH){
+		if(incoming_entry == rf_cache_bus.bus_entry[i].idx){
+			if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RA)
+				match++;
+			if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RB)
+				match++;
+			if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RC)
+				match++;
+			break;
+		}
+	}
+	result=match?0:1;
+	return result;
+}
+
+/*
+int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
+	if (outgoing_entry<0) return 0;
+	int match=0,result;
+	foreach (i, RF_CACHE_BANDWIDTH){
+		if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].idx)
+			match++;
+		if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RA)
+			match++;
+		if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RB)
+			match++;
+		if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RC)
+			match++;
+		if (match)
+			break;
+	}
+	result = match?0:1;
+	return result;
+}
+*/
 
 namespace OOO_CORE_MODEL {
     ostream& operator <<(ostream& os, const PhysicalRegister& physreg) {
@@ -521,7 +763,8 @@ int ThreadContext::get_priority() const {
  * @return true if the core should stop simulating after this cycle
  */
 bool OooCore::runcycle(void* none) {
-    bool exiting = 0;
+
+     bool exiting = 0;
 
      /*
       * Detect edge triggered transition from 0->1 for
@@ -541,6 +784,11 @@ bool OooCore::runcycle(void* none) {
         } else {
             thread->thread_stats.set_default_stats(user_stats);
         }
+		int int_buses, rf_buses;
+		int_buses = physregfiles[0].rf_cache_bus.request_on_the_fly;
+		rf_buses = physregfiles[1].rf_cache_bus.request_on_the_fly;
+		thread->thread_stats.int_cache_buses[int_buses]++;
+		thread->thread_stats.fp_cache_buses[rf_buses]++;
     }
 
      /*
@@ -671,10 +919,10 @@ bool OooCore::runcycle(void* none) {
         thread->tlbwalk();
     }
 
+	foreach_issueq(clock());
     /*
      * Issue whatever is ready
      */
-
     if (logable(9)) {
         ptl_logfile << "OooCore::run():issue\n";
     }
@@ -762,7 +1010,7 @@ bool OooCore::runcycle(void* none) {
      * Always clock the issue queues: they're independent of all threads
      */
 
-    foreach_issueq(clock());
+    //foreach_issueq(clock());
 
     /*
      * Advance the round robin priority index
