@@ -219,6 +219,7 @@ void ThreadContext::init() {
     InitClusteredROBList(rob_ready_to_load_list, "ready-to-load", ROB_STATE_IN_ISSUE_QUEUE);
     InitClusteredROBList(rob_issued_list, "issued", 0);
     InitClusteredROBList(rob_completed_list, "completed", ROB_STATE_READY);
+	InitClusteredROBList(rob_ready_to_writeback_cache_list, "ready-to-write-cache", ROB_STATE_READY);
     InitClusteredROBList(rob_ready_to_writeback_list, "ready-to-write", ROB_STATE_READY);
     rob_cache_miss_list("cache-miss", rob_states, 0);
     rob_tlb_miss_list("tlb-miss", rob_states, 0);
@@ -362,9 +363,12 @@ void PhysicalRegister::writeback() {
 	if ((*this).core->physregfiles[rfid].cache_activated())
 		if (!bypassed)
 			(*this).core->physregfiles[rfid].to_cache(idx,1);
-	bypassed=0;
+	bypassed = 0;
+	register_available = 0;
 	changestate(PHYSREG_WRITTEN);
+}
 
+void PhysicalRegister::writeback2(){
 }
 
 void PhysicalRegister::free(){
@@ -372,6 +376,7 @@ void PhysicalRegister::free(){
 	rob=0;
 	refcount=0;
 	threadid=0xff;
+	register_available = 1;
 	all_consumers_sourced_from_bypass=1;
 	flags = flags & ~(FLAG_INV | FLAG_WAIT);
 }
@@ -541,6 +546,8 @@ void PhysicalRegisterFile::read_cache(int index) {
 
 int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int index_RC){ 
 	if (!cache_activated()) return 100; //Should never be reached, arbitrary number
+	if ((*this)[index].state == PHYSREG_WRITTEN && !(*this)[index].register_available)
+		return CACHE_READ_LATENCY;
 	//Already at the RF-cache
 	if (is_cached(index))
 		return 0;
@@ -702,6 +709,7 @@ namespace OOO_CORE_MODEL {
         os << "  r", intstring(physreg.index(), -3), " state ", padstring(physreg.get_state_list().name, -12), " ", sb;
         if (physreg.rob) os << " rob ", physreg.rob->index(), " (uuid ", physreg.rob->uop.uuid, ")";
         os << " refcount ", physreg.refcount;
+		os << " availability ", physreg.register_available;
 
         return os;
     }
@@ -869,6 +877,7 @@ bool OooCore::runcycle(void* none) {
     int commitrc[threadcount];
     commitcount = 0;
     writecount = 0;
+	writecount_cache = 0;
 
     if (logable(9)) {
         ptl_logfile << "OooCore::run():thread-commit\n";
@@ -894,8 +903,10 @@ bool OooCore::runcycle(void* none) {
             continue;
         }
 
+		thread->cycle_check();
         commitrc[tid] = thread->commit();
         for_each_cluster(j) thread->writeback(j);
+		for_each_cluster(j) thread->writeback_cache(j);
         for_each_cluster(j) thread->transfer(j);
     }
 

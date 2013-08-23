@@ -694,8 +694,9 @@ namespace OOO_CORE_MODEL {
         W16s refcount;
         W8 threadid;
 		
-		//The Register Cache register-level varible
+		//The Register Cache register related varible
 		int bypassed;
+		int register_available;
 
         StateList& get_state_list(int state) const;
         StateList& get_state_list() const { return get_state_list(this->state); }
@@ -736,9 +737,11 @@ namespace OOO_CORE_MODEL {
         void commit() { changestate(PHYSREG_ARCH); }
         void complete() { cache_info_reset();changestate(PHYSREG_BYPASS); }
         void writeback() ; 
+    	void writeback2();
 
 		void cache_info_reset(){
-			bypassed=0;
+			bypassed = 0;
+			register_available = 1;
 		}
         void free() ;
 
@@ -1038,6 +1041,7 @@ namespace OOO_CORE_MODEL {
         StateList rob_ready_to_load_list[MAX_CLUSTERS];      // Ready to load (all operands ready)
         StateList rob_issued_list[MAX_CLUSTERS];             // Issued and in progress (or for loads, returned here after address is generated)
         StateList rob_completed_list[MAX_CLUSTERS];          // Completed and result in transit for local and global forwarding
+		StateList rob_ready_to_writeback_cache_list[MAX_CLUSTERS];
         StateList rob_ready_to_writeback_list[MAX_CLUSTERS]; // Completed; result ready to writeback in parallel across all cluster register files
         StateList rob_cache_miss_list;                       // Loads only: wait for cache miss to be serviced
         StateList rob_tlb_miss_list;                         // TLB miss waiting to be serviced on one or more levels
@@ -1112,7 +1116,9 @@ namespace OOO_CORE_MODEL {
         ThreadContext(OooCore& core_, W8 threadid_, Context& ctx_);
 
         int commit();
+		void cycle_check();
         int writeback(int cluster);
+    	int writeback_cache(int cluster);
         int transfer(int cluster);
         int complete(int cluster);
         int dispatch();
@@ -1176,6 +1182,7 @@ namespace OOO_CORE_MODEL {
         // Bandwidth counters:
         int commitcount;
         int writecount;
+		int writecount_cache;
         int dispatchcount;
 
         byte round_robin_tid;

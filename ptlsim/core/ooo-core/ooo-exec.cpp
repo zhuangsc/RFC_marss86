@@ -187,7 +187,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 		//Invalid entries are omitted
     	if (!valid[i]||ROB_IQ[i]==0) continue;
 
-		foreach (operand, operandcount){
+    	foreach (operand, operandcount){
 			PhysicalRegister* reg;
 			reg=ROB_IQ[i]->operands[operand];
 			rf_idx=reg->rfid;
@@ -196,7 +196,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
 					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
 			
-			if (reg->state == PHYSREG_BYPASS || reg->state == PHYSREG_WRITTEN)
+			if (reg->state == PHYSREG_BYPASS)// || reg->state == PHYSREG_WRITTEN)
 				tags_cached[operand].invalidateslot(i);
 			if (operand==RS)
 				tags_cached[operand].invalidateslot(i);
@@ -209,7 +209,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 
 		others_waiting=0;
 		foreach (operand,operandcount)
-			others_waiting+=tags[operand].isvalid(i);
+			others_waiting += tags[operand].isvalid(i);
 		if (others_waiting) continue;
 
     	foreach (operand,operandcount){
@@ -294,9 +294,8 @@ bool IssueQueue<size, operandcount>::broadcast(tag_t uopid) {
     foreach (operand, operandcount) {
 		if (slot<0)
 			slot=tags[operand].search(tagvec);
-		if (slot>=0){
-			ROB_IQ[slot]->operands[operand]->bypassed=1;
-		}
+		if (slot>=0)
+			ROB_IQ[slot]->operands[operand]->bypassed = 1;
 
 		tags[operand].invalidate(tagvec);
 	}
