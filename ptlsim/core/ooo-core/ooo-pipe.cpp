@@ -899,7 +899,7 @@ void ThreadContext::rename() {
 
             if likely ((rob.operands[i]->state == PHYSREG_WAITING) |
                     (rob.operands[i]->state == PHYSREG_BYPASS) |
-                    (rob.operands[i]->state == PHYSREG_WRITTEN)) {
+                    (rob.operands[i]->state == PHYSREG_WRITTEN)) { 
                 rob.operands[i]->rob->consumer_count = min(rob.operands[i]->rob->consumer_count + 1, 255);
             }
 
@@ -1460,13 +1460,32 @@ int ThreadContext::transfer(int cluster) {
         rob->forward_cycle++;
         if unlikely (rob->forward_cycle > MAX_FORWARDING_LATENCY) {
             rob->forward_cycle = MAX_FORWARDING_LATENCY;
-            rob->changestate(rob_ready_to_writeback_list[rob->cluster]);
+            rob->changestate(rob_ready_to_writeback_cache_list[rob->cluster]);
         }
 
 		thread_stats.rob_reads++;
     }
 
     return 0;
+}
+
+void ThreadContext::cycle_check(){
+	ReorderBufferEntry* rob;
+	foreach_list_mutable(rob_ready_to_commit_queue, rob, entry, nextentry)
+		rob->physreg->register_available = 1;
+}
+
+int ThreadContext::writeback_cache(int cluster){
+	ReorderBufferEntry* rob;
+	foreach_list_mutable(rob_ready_to_writeback_cache_list[cluster], rob, entry, nextentry){
+		if unlikely (core.writecount_cache >= WRITEBACK_WIDTH) break;
+
+		core.writecount_cache++;
+		rob->forward();
+		rob->physreg->writeback();
+		rob->changestate(rob_ready_to_writeback_list[cluster]);
+	}
+    return core.writecount_cache++;
 }
 
 /**
@@ -1478,7 +1497,7 @@ int ThreadContext::transfer(int cluster) {
  */
 int ThreadContext::writeback(int cluster) {
 
-    int wakeupcount = 0;
+    //int wakeupcount = 0;
     ReorderBufferEntry* rob;
     foreach_list_mutable(rob_ready_to_writeback_list[cluster], rob, entry, nextentry) {
         if unlikely (core.writecount >= WRITEBACK_WIDTH) break;
@@ -1509,7 +1528,7 @@ int ThreadContext::writeback(int cluster) {
           * while producer waited in ready_to_writeback state:
           */
 
-        wakeupcount += rob->forward();
+        //wakeupcount += rob->forward();
 
         core.writecount++;
 
@@ -1519,7 +1538,7 @@ int ThreadContext::writeback(int cluster) {
           */
 
         thread_stats.writeback.writebacks[rob->physreg->rfid]++;
-        rob->physreg->writeback();
+        rob->physreg->writeback2();
         rob->cycles_left = -1;
         rob->changestate(rob_ready_to_commit_queue);
 
