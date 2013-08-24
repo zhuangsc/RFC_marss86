@@ -62,4 +62,7 @@ gdb.txt
 
 # Any patch files
 *.patch
+*.backup
+*.yml
+*.log
 qemu/*

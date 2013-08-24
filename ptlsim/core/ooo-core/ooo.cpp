@@ -369,6 +369,7 @@ void PhysicalRegister::writeback() {
 }
 
 void PhysicalRegister::writeback2(){
+	register_available = 1;
 }
 
 void PhysicalRegister::free(){
@@ -797,6 +798,10 @@ bool OooCore::runcycle(void* none) {
 		rf_buses = physregfiles[1].rf_cache_bus.request_on_the_fly;
 		thread->thread_stats.int_cache_buses[int_buses]++;
 		thread->thread_stats.fp_cache_buses[rf_buses]++;
+		foreach(i, PHYS_REG_FILE_SIZE){
+			physregfiles[0][i].register_available = 1;
+			physregfiles[1][i].register_available = 1;
+		}
     }
 
      /*
@@ -903,7 +908,7 @@ bool OooCore::runcycle(void* none) {
             continue;
         }
 
-		thread->cycle_check();
+		//thread->cycle_check();
         commitrc[tid] = thread->commit();
         for_each_cluster(j) thread->writeback(j);
 		for_each_cluster(j) thread->writeback_cache(j);

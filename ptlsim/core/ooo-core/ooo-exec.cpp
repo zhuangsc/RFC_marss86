@@ -182,9 +182,8 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     //Tick the RF-RF cache bus
     foreach (i, PHYS_REG_FILE_COUNT)
 		(*core).physregfiles[i].cache_tick();
-	//Traverse the whole issue queue
+
     foreach(i,size){
-		//Invalid entries are omitted
     	if (!valid[i]||ROB_IQ[i]==0) continue;
 
     	foreach (operand, operandcount){
@@ -196,19 +195,15 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
 					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
 			
-			if (reg->state == PHYSREG_BYPASS)// || reg->state == PHYSREG_WRITTEN)
-				tags_cached[operand].invalidateslot(i);
-			if (operand==RS)
+			if (reg->state == PHYSREG_BYPASS || operand == RS || reg->archreg >= REG_temp0)
 				tags_cached[operand].invalidateslot(i);
 			if (operand==RC)
 				if unlikely(isstore(ROB_IQ[i]->uop.opcode) && !ROB_IQ[i]->load_store_second_phase)
 					tags_cached[operand].invalidateslot(i);
-			if (reg->archreg >= REG_temp0)
-				tags_cached[operand].invalidateslot(i);
 		}
 
 		others_waiting=0;
-		foreach (operand,operandcount)
+		foreach (operand,operandcount-1)
 			others_waiting += tags[operand].isvalid(i);
 		if (others_waiting) continue;
 

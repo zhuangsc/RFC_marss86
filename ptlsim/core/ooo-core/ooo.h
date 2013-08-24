@@ -1116,7 +1116,7 @@ namespace OOO_CORE_MODEL {
         ThreadContext(OooCore& core_, W8 threadid_, Context& ctx_);
 
         int commit();
-		void cycle_check();
+		//void cycle_check();
         int writeback(int cluster);
     	int writeback_cache(int cluster);
         int transfer(int cluster);
