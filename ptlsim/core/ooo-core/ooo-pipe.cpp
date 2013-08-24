@@ -1468,13 +1468,13 @@ int ThreadContext::transfer(int cluster) {
 
     return 0;
 }
-
+/*
 void ThreadContext::cycle_check(){
 	ReorderBufferEntry* rob;
 	foreach_list_mutable(rob_ready_to_commit_queue, rob, entry, nextentry)
 		rob->physreg->register_available = 1;
 }
-
+*/
 int ThreadContext::writeback_cache(int cluster){
 	ReorderBufferEntry* rob;
 	foreach_list_mutable(rob_ready_to_writeback_cache_list[cluster], rob, entry, nextentry){

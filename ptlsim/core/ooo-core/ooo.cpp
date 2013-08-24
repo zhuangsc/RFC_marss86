@@ -369,6 +369,7 @@ void PhysicalRegister::writeback() {
 }
 
 void PhysicalRegister::writeback2(){
+	register_available = 1;
 }
 
 void PhysicalRegister::free(){
@@ -903,7 +904,7 @@ bool OooCore::runcycle(void* none) {
             continue;
         }
 
-		thread->cycle_check();
+		//thread->cycle_check();
         commitrc[tid] = thread->commit();
         for_each_cluster(j) thread->writeback(j);
 		for_each_cluster(j) thread->writeback_cache(j);
