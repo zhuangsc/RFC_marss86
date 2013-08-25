@@ -798,10 +798,6 @@ bool OooCore::runcycle(void* none) {
 		rf_buses = physregfiles[1].rf_cache_bus.request_on_the_fly;
 		thread->thread_stats.int_cache_buses[int_buses]++;
 		thread->thread_stats.fp_cache_buses[rf_buses]++;
-		foreach(i, PHYS_REG_FILE_SIZE){
-			physregfiles[0][i].register_available = 1;
-			physregfiles[1][i].register_available = 1;
-		}
     }
 
      /*
