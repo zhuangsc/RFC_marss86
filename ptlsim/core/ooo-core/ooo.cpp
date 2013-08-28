@@ -427,6 +427,7 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 		this->rf_cache_bus.bus_entry[i].index_RA = -1;
 		this->rf_cache_bus.bus_entry[i].index_RB = -1;
 		this->rf_cache_bus.bus_entry[i].index_RC = -1;
+		this->rf_cache_bus.remove_pool[i] = -1;
 	}
 }
 
@@ -566,16 +567,19 @@ int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int i
 void PhysicalRegisterFile::cache_tick() {
 	if (!cache_activated()) return;
 	int request_idx;
+	int pool_idx=0;
 	foreach (i,RF_CACHE_BANDWIDTH){
 		if (rf_cache_bus.bus_entry[i].idx >= 0){
 			request_idx = rf_cache_bus.bus_entry[i].idx;
 			rf_cache_bus.bus_entry[i].latency--;
 			if (!rf_cache_bus.bus_entry[i].latency){ 
 				to_cache(request_idx , 0);
-				bus_entry_remove(request_idx);
+				rf_cache_bus.remove_pool[pool_idx] = i;
+				pool_idx++;
 			}
 		}
 	}
+	bus_entry_remove();
 }
 
 void PhysicalRegisterFile::bus_entry_insert(int index,int index_RA,int index_RB,int index_RC){
@@ -591,17 +595,18 @@ void PhysicalRegisterFile::bus_entry_insert(int index,int index_RA,int index_RB,
 	rf_cache_bus.request_on_the_fly++;
 }
 
-void PhysicalRegisterFile::bus_entry_remove(int index){
-	foreach(i, RF_CACHE_BANDWIDTH)
-		if (rf_cache_bus.bus_entry[i].idx == index){
+void PhysicalRegisterFile::bus_entry_remove(){
+	foreach(i, RF_CACHE_BANDWIDTH){
+		if (rf_cache_bus.remove_pool[i] >= 0){
 			rf_cache_bus.bus_entry[i].idx = -1;
 			rf_cache_bus.bus_entry[i].latency = -1;
 			rf_cache_bus.bus_entry[i].index_RA = -1;
 			rf_cache_bus.bus_entry[i].index_RB = -1;
 			rf_cache_bus.bus_entry[i].index_RC = -1;
-			break;
+			rf_cache_bus.request_on_the_fly--;
+			rf_cache_bus.remove_pool[i] = -1;
 		}
-	rf_cache_bus.request_on_the_fly--;
+	}
 }
 
 void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
@@ -663,6 +668,7 @@ int PhysicalRegisterFile::ban_list_add(int* ban_list, int index, int ban_list_in
 	return ban_list_index;
 }
 
+/*
 int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 	if (outgoing_entry<0) return 0;
 	int match=0,result;
@@ -680,8 +686,8 @@ int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 	result=match?0:1;
 	return result;
 }
+*/
 
-/*
 int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 	if (outgoing_entry<0) return 0;
 	int match=0,result;
@@ -700,7 +706,6 @@ int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 	result = match?0:1;
 	return result;
 }
-*/
 
 namespace OOO_CORE_MODEL {
     ostream& operator <<(ostream& os, const PhysicalRegister& physreg) {

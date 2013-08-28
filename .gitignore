@@ -65,4 +65,5 @@ gdb.txt
 *.backup
 *.yml
 *.log
+*.cfg
 qemu/*

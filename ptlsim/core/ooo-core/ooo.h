@@ -792,7 +792,7 @@ namespace OOO_CORE_MODEL {
 
      	static const int RF_CACHE_SIZE=8; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
-        static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
+        static const int RF_CACHE_BANDWIDTH=8; //Buses between the RF and RF Cache
     	int cache_enabled;
 		
 
@@ -815,7 +815,9 @@ namespace OOO_CORE_MODEL {
 		struct struct_bus{
 			struct bus_entries bus_entry[RF_CACHE_BANDWIDTH];
 			int request_on_the_fly;
+			int remove_pool[RF_CACHE_BANDWIDTH];
 		} rf_cache_bus;
+		//int request_index_poll[RF_CACHE_BANDWIDTH];
 
         PhysicalRegisterFile() { }
 
@@ -838,7 +840,7 @@ namespace OOO_CORE_MODEL {
 		void add_cache_entry (int entry, int idx);
 
     	void bus_entry_insert(int index,int index_RA,int index_RB,int index_RC);
-    	void bus_entry_remove(int index);
+    	void bus_entry_remove();
 		void writebacker_stats(int);
 
 		void to_cache(int index, int writebacker);
