@@ -817,7 +817,6 @@ namespace OOO_CORE_MODEL {
 			int request_on_the_fly;
 			int remove_pool[RF_CACHE_BANDWIDTH];
 		} rf_cache_bus;
-		//int request_index_poll[RF_CACHE_BANDWIDTH];
 
         PhysicalRegisterFile() { }
 
