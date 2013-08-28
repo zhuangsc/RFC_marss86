@@ -213,7 +213,7 @@ for bench in splash_bench_tilera_paper_specifics:
 spec_list_min = [
         {'name' : 'bzip', # 1
          'command' :
-         '''cd spec06/401.bzip2/run*
+         '''cd spec06/401.bzip2/run_base_test*
          ~/create_checkpoint bzip; ../bzip2* input.program 5 ; ~/stop_sim
          '''
          },
@@ -221,73 +221,73 @@ spec_list_min = [
 spec_list_int = [
         {'name' : 'perl', # 0
          'command' :
-         '''cd spec06/400.perlbench/run*
+         '''cd spec06/400.perlbench/run_base_test*
          ~/create_checkpoint perl; ../perl* -I. -I./lib pack.pl ; ~/stop_sim
          '''
          },
         {'name' : 'bzip', # 1
          'command' :
-         '''cd spec06/401.bzip2/run*
+         '''cd spec06/401.bzip2/run_base_test*
          ~/create_checkpoint bzip; ../bzip2* input.program 5 ; ~/stop_sim
          '''
          },
         {'name' : 'gcc', # 2
          'command' :
-         '''cd spec06/403.gcc/run*
+         '''cd spec06/403.gcc/run_base_test*
          ~/create_checkpoint gcc; ../gcc* cccp.i -o cccp.s ; ~/stop_sim
          '''
          },
         {'name' : 'mcf', # 5
          'command' :
-         '''cd spec06/429.mcf/run*
+         '''cd spec06/429.mcf/run_base_test*
          ~/create_checkpoint mcf; ../mcf* inp.in ; ~/stop_sim
          '''
          },
         {'name' : 'gobmk', #12
          'command' :
-         '''cd spec06/445.gobmk/run*
+         '''cd spec06/445.gobmk/run_base_test*
          ~/create_checkpoint gobmk; ../gobmk* --quiet --mode gtp < capture.tst ; ~/stop_sim
          '''
          },
         {'name' : 'hmm', #17
          'command' :
-         '''cd spec06/456.hmmer/run*
+         '''cd spec06/456.hmmer/run_base_test*
          ~/create_checkpoint hmm; ../hmmer* --fixed 0 --mean 325 --num 4500 --sd 200 --seed 0 bombesin.hmm ; ~/stop_sim
          '''
          },
         {'name' : 'sjeng', #18
          'command' :
-         '''cd spec06/458.sjeng/run*
+         '''cd spec06/458.sjeng/run_base_test*
          ~/create_checkpoint sjeng; ../sjeng* test.txt ; ~/stop_sim
          '''
          },
         {'name' : 'quantum', #20
          'command' :
-         '''cd spec06/462.libquantum/run*
+         '''cd spec06/462.libquantum/run_base_test*
          ~/create_checkpoint quantum; ../libquantum* 33 5 ; ~/stop_sim
          '''
          },
         {'name' : 'h264', #21
          'command' :
-         '''cd spec06/464.h264ref/run*
+         '''cd spec06/464.h264ref/run_base_test*
          ~/create_checkpoint h264; ../h264ref* -d foreman_test_encoder_baseline.cfg ; ~/stop_sim
          '''
          },
         {'name' : 'omnetpp', #24
          'command' :
-         '''cd spec06/471.omnetpp/run*
+         '''cd spec06/471.omnetpp/run_base_test*
          ~/create_checkpoint omnetpp; ../omnetpp* omnetpp.ini ; ~/stop_sim
          '''
          },
         {'name' : 'astar', #25
          'command' :
-         '''cd spec06/473.astar/run*
+         '''cd spec06/473.astar/run_base_test*
          ~/create_checkpoint astar; ../astar* lake.cfg ; ~/stop_sim
          '''
          },
         {'name' : 'xalanc', #28
          'command' :
-         '''cd spec06/483.xalancbmk/run*
+         '''cd spec06/483.xalancbmk/run_base_test*
          ~/create_checkpoint xalanc; ../Xalan* -v test.xml xalanc.xsl ; ~/stop_sim
          '''
          },
@@ -296,103 +296,103 @@ spec_list_int = [
 spec_list_fp = [
         {'name' : 'bwaves', # 3
          'command' :
-         '''ulimit -s unlimited; cd spec06/410.bwaves/run*
+         '''ulimit -s unlimited; cd spec06/410.bwaves/run_base_test*
          ~/create_checkpoint bwaves; ../bwaves* ; ~/stop_sim
          '''
          },
         {'name' : 'gamess', # 4
          'command' :
-         '''cd spec06/416.gamess/run*
+         '''cd spec06/416.gamess/run_base_test*
          ~/create_checkpoint gamess; ../gamess* < exam29.config ; ~/stop_sim
          '''
          },
         {'name' : 'milc', # 6
          'command' :
-         '''cd spec06/433.milc/run*
+         '''cd spec06/433.milc/run_base_test*
          ~/create_checkpoint milc; ../milc* < su3imp.in ; ~/stop_sim
          '''
          },
         {'name' : 'zeusmp', # 7
          'command' :
-         '''ulimit -s unlimited; cd spec06/434.zeusmp/run*
+         '''ulimit -s unlimited; cd spec06/434.zeusmp/run_base_test*
          ~/create_checkpoint zeusmp; ../zeusmp* ; ~/stop_sim
          '''
          },
         {'name' : 'gromacs', # 8
          'command' :
-         '''cd spec06/435.gromacs/run*
+         '''cd spec06/435.gromacs/run_base_test*
          ~/create_checkpoint gromacs ; ../gromacs* -silent -deffnm gromacs -nice 0 ; ~/stop_sim
          '''
          },
         {'name' : 'cactusADM', # 9
          'command' :
-         '''cd spec06/436.cactusADM/run*
+         '''cd spec06/436.cactusADM/run_base_test*
          ~/create_checkpoint cactusADM; ../cactusADM* benchADM.par ; ~/stop_sim
          '''
          },
         {'name' : 'leslie3d', #10
          'command' :
-         '''ulimit -s unlimited; cd spec06/437.leslie3d/run*
+         '''ulimit -s unlimited; cd spec06/437.leslie3d/run_base_test*
          ~/create_checkpoint leslie3d; ../leslie3d* < leslie3d.in ; ~/stop_sim
          '''
          },
         {'name' : 'namd', #11
          'command' :
-         '''cd spec06/444.namd/run*
+         '''cd spec06/444.namd/run_base_test*
          ~/create_checkpoint namd; ../namd*  --input namd.input --iterations 1 --output namd.out ; ~/stop_sim
          '''
          },
         {'name' : 'deal2', #13
          'command' :
-         '''cd spec06/447.dealII/run*
+         '''cd spec06/447.dealII/run_base_test*
          ~/create_checkpoint deal2; ../dealII* 2 ; ~/stop_sim
          '''
          },
         {'name' : 'soplex', #14
          'command' :
-         '''cd spec06/450.soplex/run*
+         '''cd spec06/450.soplex/run_base_test*
          ~/create_checkpoint soplex; ../soplex* -m10000 test.mps ; ~/stop_sim
          '''
          },
         {'name' : 'povray', #15
          'command' :
-         '''cd spec06/453.povray/run*
+         '''cd spec06/453.povray/run_base_test*
          ~/create_checkpoint povray; ../povray* SPEC-benchmark-test.ini ; ~/stop_sim
          '''
          },
         {'name' : 'calculix', #16
          'command' :
-         '''cd spec06/454.calculix/run*
+         '''cd spec06/454.calculix/run_base_test*
          ~/create_checkpoint calculix; ../calculix* -i beampic ; ~/stop_sim
          '''
          },
         {'name' : 'GemsFDTD', #19
          'command' :
-         '''ulimit -s unlimited; cd spec06/459.GemsFDTD/run*
+         '''ulimit -s unlimited; cd spec06/459.GemsFDTD/run_base_test*
          ~/create_checkpoint GemsFDTD; ../GemsFDTD* ; ~/stop_sim
          '''
          },
         {'name' : 'tonto', #22
          'command' :
-         '''cd spec06/465.tonto/run*
+         '''cd spec06/465.tonto/run_base_test*
          ~/create_checkpoint tonto; ../tonto* ; ~/stop_sim
          '''
          },
         {'name' : 'lbm', #23
          'command' :
-         '''cd spec06/470.lbm/run*
+         '''cd spec06/470.lbm/run_base_test*
          ~/create_checkpoint lbm; ../lbm* 20 reference.dat 0 1 100_100_130_cf_a.of ; ~/stop_sim
          '''
          },
 		{'name' : 'wrf',  #26
          'command' :
-         '''cd spec06/481.wrf/run*
+         '''cd spec06/481.wrf/run_base_test*
          ~/create_checkpoint wrf; ../wrf* ; ~/stop_sim
          '''
 		 },
         {'name' : 'sphinx', #27
          'command' :
-         '''cd spec06/482.sphinx3/run*
+         '''cd spec06/482.sphinx3/run_base_test*
          ~/create_checkpoint sphinx; ../sphinx* ctlfile . args.an4 ; ~/stop_sim
          '''
          },
@@ -401,175 +401,175 @@ spec_list_fp = [
 spec_list = [
         {'name' : 'perl', # 0
          'command' :
-         '''cd spec06/400.perlbench/run*
+         '''cd spec06/400.perlbench/run_base_test*
          ~/create_checkpoint perl; ../perl* -I. -I./lib pack.pl ; ~/stop_sim
          '''
          },
         {'name' : 'bzip', # 1
          'command' :
-         '''cd spec06/401.bzip2/run*
+         '''cd spec06/401.bzip2/run_base_test*
          ~/create_checkpoint bzip; ../bzip2* input.program 5 ; ~/stop_sim
          '''
          },
         {'name' : 'gcc', # 2
          'command' :
-         '''cd spec06/403.gcc/run*
+         '''cd spec06/403.gcc/run_base_test*
          ~/create_checkpoint gcc; ../gcc* cccp.i -o cccp.s ; ~/stop_sim
          '''
          },
         {'name' : 'bwaves', # 3
          'command' :
-         '''ulimit -s unlimited; cd spec06/410.bwaves/run*
+         '''ulimit -s unlimited; cd spec06/410.bwaves/run_base_test*
          ~/create_checkpoint bwaves; ../bwaves* ; ~/stop_sim
          '''
          },
         {'name' : 'gamess', # 4
          'command' :
-         '''cd spec06/416.gamess/run*
+         '''cd spec06/416.gamess/run_base_test*
          ~/create_checkpoint gamess; ../gamess* < exam29.config ; ~/stop_sim
          '''
          },
         {'name' : 'mcf', # 5
          'command' :
-         '''cd spec06/429.mcf/run*
+         '''cd spec06/429.mcf/run_base_test*
          ~/create_checkpoint mcf; ../mcf* inp.in ; ~/stop_sim
          '''
          },
         {'name' : 'milc', # 6
          'command' :
-         '''cd spec06/433.milc/run*
+         '''cd spec06/433.milc/run_base_test*
          ~/create_checkpoint milc; ../milc* < su3imp.in ; ~/stop_sim
          '''
          },
         {'name' : 'zeusmp', # 7
          'command' :
-         '''ulimit -s unlimited; cd spec06/434.zeusmp/run*
+         '''ulimit -s unlimited; cd spec06/434.zeusmp/run_base_test*
          ~/create_checkpoint zeusmp; ../zeusmp* ; ~/stop_sim
          '''
          },
         {'name' : 'gromacs', # 8
          'command' :
-         '''cd spec06/435.gromacs/run*
+         '''cd spec06/435.gromacs/run_base_test*
          ~/create_checkpoint gromacs ; ../gromacs* -silent -deffnm gromacs -nice 0 ; ~/stop_sim
          '''
          },
         {'name' : 'cactusADM', # 9
          'command' :
-         '''cd spec06/436.cactusADM/run*
+         '''cd spec06/436.cactusADM/run_base_test*
          ~/create_checkpoint cactusADM; ../cactusADM* benchADM.par ; ~/stop_sim
          '''
          },
         {'name' : 'leslie3d', #10
          'command' :
-         '''ulimit -s unlimited; cd spec06/437.leslie3d/run*
+         '''ulimit -s unlimited; cd spec06/437.leslie3d/run_base_test*
          ~/create_checkpoint leslie3d; ../leslie3d* < leslie3d.in ; ~/stop_sim
          '''
          },
         {'name' : 'namd', #11
          'command' :
-         '''cd spec06/444.namd/run*
+         '''cd spec06/444.namd/run_base_test*
          ~/create_checkpoint namd; ../namd*  --input namd.input --iterations 1 --output namd.out ; ~/stop_sim
          '''
          },
         {'name' : 'gobmk', #12
          'command' :
-         '''cd spec06/445.gobmk/run*
+         '''cd spec06/445.gobmk/run_base_test*
          ~/create_checkpoint gobmk; ../gobmk* --quiet --mode gtp < capture.tst ; ~/stop_sim
          '''
          },
         {'name' : 'deal2', #13
          'command' :
-         '''cd spec06/447.dealII/run*
+         '''cd spec06/447.dealII/run_base_test*
          ~/create_checkpoint deal2; ../dealII* 2 ; ~/stop_sim
          '''
          },
         {'name' : 'soplex', #14
          'command' :
-         '''cd spec06/450.soplex/run*
+         '''cd spec06/450.soplex/run_base_test*
          ~/create_checkpoint soplex; ../soplex* -m10000 test.mps ; ~/stop_sim
          '''
          },
         {'name' : 'povray', #15
          'command' :
-         '''cd spec06/453.povray/run*
+         '''cd spec06/453.povray/run_base_test*
          ~/create_checkpoint povray; ../povray* SPEC-benchmark-test.ini ; ~/stop_sim
          '''
          },
         {'name' : 'calculix', #16
          'command' :
-         '''cd spec06/454.calculix/run*
+         '''cd spec06/454.calculix/run_base_test*
          ~/create_checkpoint calculix; ../calculix* -i beampic ; ~/stop_sim
          '''
          },
         {'name' : 'hmm', #17
          'command' :
-         '''cd spec06/456.hmmer/run*
+         '''cd spec06/456.hmmer/run_base_test*
          ~/create_checkpoint hmm; ../hmmer* --fixed 0 --mean 325 --num 4500 --sd 200 --seed 0 bombesin.hmm ; ~/stop_sim
          '''
          },
         {'name' : 'sjeng', #18
          'command' :
-         '''cd spec06/458.sjeng/run*
+         '''cd spec06/458.sjeng/run_base_test*
          ~/create_checkpoint sjeng; ../sjeng* test.txt ; ~/stop_sim
          '''
          },
         {'name' : 'GemsFDTD', #19
          'command' :
-         '''ulimit -s unlimited; cd spec06/459.GemsFDTD/run*
+         '''ulimit -s unlimited; cd spec06/459.GemsFDTD/run_base_test*
          ~/create_checkpoint GemsFDTD; ../GemsFDTD* ; ~/stop_sim
          '''
          },
         {'name' : 'quantum', #20
          'command' :
-         '''cd spec06/462.libquantum/run*
+         '''cd spec06/462.libquantum/run_base_test*
          ~/create_checkpoint quantum; ../libquantum* 33 5 ; ~/stop_sim
          '''
          },
         {'name' : 'h264', #21
          'command' :
-         '''cd spec06/464.h264ref/run*
+         '''cd spec06/464.h264ref/run_base_test*
          ~/create_checkpoint h264; ../h264ref* -d foreman_test_encoder_baseline.cfg ; ~/stop_sim
          '''
          },
         {'name' : 'tonto', #22
          'command' :
-         '''cd spec06/465.tonto/run*
+         '''cd spec06/465.tonto/run_base_test*
          ~/create_checkpoint tonto; ../tonto* ; ~/stop_sim
          '''
          },
         {'name' : 'lbm', #23
          'command' :
-         '''cd spec06/470.lbm/run*
+         '''cd spec06/470.lbm/run_base_test*
          ~/create_checkpoint lbm; ../lbm* 20 reference.dat 0 1 100_100_130_cf_a.of ; ~/stop_sim
          '''
          },
         {'name' : 'omnetpp', #24
          'command' :
-         '''cd spec06/471.omnetpp/run*
+         '''cd spec06/471.omnetpp/run_base_test*
          ~/create_checkpoint omnetpp; ../omnetpp* omnetpp.ini ; ~/stop_sim
          '''
          },
         {'name' : 'astar', #25
          'command' :
-         '''cd spec06/473.astar/run*
+         '''cd spec06/473.astar/run_base_test*
          ~/create_checkpoint astar; ../astar* lake.cfg ; ~/stop_sim
          '''
          },
 		{'name' : 'wrf',  #26
          'command' :
-         '''cd spec06/481.wrf/run*
+         '''cd spec06/481.wrf/run_base_test*
          ~/create_checkpoint wrf; ../wrf* ; ~/stop_sim
          '''
 		 },
         {'name' : 'sphinx', #27
          'command' :
-         '''cd spec06/482.sphinx3/run*
+         '''cd spec06/482.sphinx3/run_base_test*
          ~/create_checkpoint sphinx; ../sphinx* ctlfile . args.an4 ; ~/stop_sim
          '''
          },
         {'name' : 'xalanc', #28
          'command' :
-         '''cd spec06/483.xalancbmk/run*
+         '''cd spec06/483.xalancbmk/run_base_test*
          ~/create_checkpoint xalanc; ../Xalan* -v test.xml xalanc.xsl ; ~/stop_sim
          '''
          },
