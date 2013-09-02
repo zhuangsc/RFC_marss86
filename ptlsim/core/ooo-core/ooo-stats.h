@@ -530,7 +530,8 @@ namespace OOO_CORE_MODEL {
 		StatArray<W64, PHYS_REG_FILE_COUNT> physreg_writes;
 		StatArray<W64, 9> int_cache_buses;
 		StatArray<W64, 9> fp_cache_buses;
-		StatArray<W64, 2> writeback_whom;
+		StatArray<W64, 2> writeback_whom_int;
+		StatArray<W64, 2> writeback_whom_fp;
 
 		StatObj<W64> rob_reads;
 		StatObj<W64> rob_writes;
@@ -564,7 +565,8 @@ namespace OOO_CORE_MODEL {
 			  , physreg_writes("physreg_writes", this, phys_reg_file_names)
 			  , int_cache_buses("int_cache_buses", this, cache_buses_numbers)
 			  , fp_cache_buses("fp_cache_buses", this, cache_buses_numbers)
-			  , writeback_whom("writeback_whom", this, writebacker_names)
+			  , writeback_whom_int("writeback_whom_int", this, writebacker_names)
+			  , writeback_whom_fp("writeback_whom_fp", this, writebacker_names)
 			  , rob_reads("rob_reads", this)
 			  , rob_writes("rob_writes", this)
 			  , rename_table_reads("rename_table_reads", this)

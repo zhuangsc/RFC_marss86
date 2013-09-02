@@ -447,7 +447,10 @@ PhysicalRegister* PhysicalRegisterFile::alloc(W8 threadid, int r) {
 }
 
 void PhysicalRegisterFile::writebacker_stats(int writebacker){
-	core->getthread().thread_stats.writeback_whom[writebacker]++;
+	if (!this->rfid)
+		core->getthread().thread_stats.writeback_whom_int[writebacker]++;
+	else
+		core->getthread().thread_stats.writeback_whom_fp[writebacker]++;
 }
 
 /**
