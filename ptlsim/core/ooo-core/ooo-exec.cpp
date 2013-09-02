@@ -505,13 +505,6 @@ int ReorderBufferEntry::issue() {
     OooCore& core = getcore();
     ThreadContext& thread = getthread();
 
-	foreach (operand, MAX_OPERANDS){
-		int rf_index,r_index;
-		rf_index=operands[operand]->rfid;
-		r_index=operands[operand]->idx;
-		core.physregfiles[rf_index].read_cache(r_index);
-	}
-
     /*
      *  We keep TLB miss handling entries into issue queue
      *  to make sure that when tlb miss is handled, they will
@@ -648,6 +641,13 @@ int ReorderBufferEntry::issue() {
         }
     } else {
         thread.thread_stats.issue.opclass[opclassof(uop.opcode)]++;
+		//Read the RF Cache for any operands
+		foreach (operand, MAX_OPERANDS){
+			int rf_index,r_index;
+			rf_index=operands[operand]->rfid;
+			r_index=operands[operand]->idx;
+			core.physregfiles[rf_index].read_cache(r_index);
+		}
 
         if unlikely (ld|st) {
             int completed = 0;

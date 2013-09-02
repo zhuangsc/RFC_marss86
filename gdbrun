@@ -1,4 +1,3 @@
 handle SIGUSR1 SIGUSR2 nostop noprint
 b ooo.cpp:906
-#b ooo-pipe.cpp:1478
 info b
