@@ -384,6 +384,8 @@ void PhysicalRegister::free(){
 	register_available = 1;
 	all_consumers_sourced_from_bypass=1;
 	flags = flags & ~(FLAG_INV | FLAG_WAIT);
+	if(this->core->physregfiles[rfid].is_cached(idx))
+		(*this).core->physregfiles[rfid].remove_cache_entry(idx);
 }
 
 /**
@@ -621,6 +623,19 @@ void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
 	rf_cache.cache_entry[entry].reference = sim_cycle;
 	rf_cache.cache_entry[entry].valid = 1;
 	rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
+}
+
+void PhysicalRegisterFile::remove_cache_entry (int idx){
+	foreach(i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].idx == idx){
+			rf_cache.cache_entry[i].valid = 0;
+			rf_cache.cache_entry[i].reference = 0;
+			rf_cache.cache_entry[i].idx = -1;
+			rf_cache.cache_entry[i].rob_in_cache = 0;
+			if (rf_cache.cache_entry_occupancy > 0)
+				rf_cache.cache_entry_occupancy--;
+		}
+	}
 }
 
 void PhysicalRegisterFile::to_cache(int index, int writebacker){

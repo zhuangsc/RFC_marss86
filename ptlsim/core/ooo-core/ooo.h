@@ -837,6 +837,7 @@ namespace OOO_CORE_MODEL {
     	void read_cache(int index);
     	int read_request(int index,int index_RA,int index_RB,int index_RC);
 		void add_cache_entry (int entry, int idx);
+		void remove_cache_entry(int idx);
 
     	void bus_entry_insert(int index,int index_RA,int index_RB,int index_RC);
     	void bus_entry_remove();
