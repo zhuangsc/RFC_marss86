@@ -274,6 +274,7 @@ namespace OOO_CORE_MODEL {
 	extern const char* cache_buses_numbers[9];
 	extern const char* writebacker_names[2];
 	extern const char* bypass_reads_names[4];
+	extern const char* register_status[8];
 
 };
 

@@ -533,6 +533,9 @@ namespace OOO_CORE_MODEL {
 		StatArray<W64, 2> writeback_whom_int;
 		StatArray<W64, 2> writeback_whom_fp;
 		StatArray<W64, 4> bypass_reads;
+		StatArray<W64, 8> RA_status;
+		StatArray<W64, 8> RB_status;
+		StatArray<W64, 8> RC_status;
 
 		StatObj<W64> rob_reads;
 		StatObj<W64> rob_writes;
@@ -569,6 +572,9 @@ namespace OOO_CORE_MODEL {
 			  , writeback_whom_int("writeback_whom_int", this, writebacker_names)
 			  , writeback_whom_fp("writeback_whom_fp", this, writebacker_names)
 			  , bypass_reads("bypass_reads", this, bypass_reads_names)
+			  , RA_status("RA_status", this, register_status)
+			  , RB_status("RB_status", this, register_status)
+			  , RC_status("RC_status", this, register_status)
 			  , rob_reads("rob_reads", this)
 			  , rob_writes("rob_writes", this)
 			  , rename_table_reads("rename_table_reads", this)

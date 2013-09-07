@@ -644,12 +644,24 @@ int ReorderBufferEntry::issue() {
 		//Read the RF Cache for any operands
 		int bypass_operands = 0;
 		foreach (operand, MAX_OPERANDS-1){
-			int rf_index,r_index;
+			int rf_index,r_index,reg_status;
 			rf_index=operands[operand]->rfid;
 			r_index=operands[operand]->idx;
+			reg_status = operands[operand]->state;
 			core.physregfiles[rf_index].read_cache(r_index);
-			if (operands[operand]->state == PHYSREG_BYPASS)
+			if (reg_status == PHYSREG_BYPASS)
 				bypass_operands++;
+			switch (operand){
+				case RA:
+					thread.thread_stats.RA_status[reg_status]++;
+					break;
+				case RB:
+					thread.thread_stats.RB_status[reg_status]++;
+					break;
+				case RC:
+					thread.thread_stats.RC_status[reg_status]++;
+					break;
+			}
 		}
 		thread.thread_stats.bypass_reads[bypass_operands]++;
 
