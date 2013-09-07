@@ -61,6 +61,8 @@ namespace OOO_CORE_MODEL {
 
 	const char* writebacker_names[2]={"ISSUE","WB"};
 
+	const char* bypass_reads_names[4]={"0","1","2","3"};
+
     const char* fu_names[FU_COUNT] = {
         "ldu0",
         "stu0",

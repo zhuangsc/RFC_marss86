@@ -642,12 +642,16 @@ int ReorderBufferEntry::issue() {
     } else {
         thread.thread_stats.issue.opclass[opclassof(uop.opcode)]++;
 		//Read the RF Cache for any operands
-		foreach (operand, MAX_OPERANDS){
+		int bypass_operands = 0;
+		foreach (operand, MAX_OPERANDS-1){
 			int rf_index,r_index;
 			rf_index=operands[operand]->rfid;
 			r_index=operands[operand]->idx;
 			core.physregfiles[rf_index].read_cache(r_index);
+			if (operands[operand]->state == PHYSREG_BYPASS)
+				bypass_operands++;
 		}
+		thread.thread_stats.bypass_reads[bypass_operands]++;
 
         if unlikely (ld|st) {
             int completed = 0;
