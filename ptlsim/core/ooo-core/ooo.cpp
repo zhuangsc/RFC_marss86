@@ -385,7 +385,7 @@ void PhysicalRegister::free(){
 	all_consumers_sourced_from_bypass=1;
 	flags = flags & ~(FLAG_INV | FLAG_WAIT);
 	if(this->core->physregfiles[rfid].is_cached(idx))
-		(*this).core->physregfiles[rfid].remove_cache_entry(idx);
+		this->core->physregfiles[rfid].remove_cache_entry(idx);
 }
 
 /**
