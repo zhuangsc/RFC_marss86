@@ -536,6 +536,9 @@ namespace OOO_CORE_MODEL {
 		StatArray<W64, 8> RA_status;
 		StatArray<W64, 8> RB_status;
 		StatArray<W64, 8> RC_status;
+		StatArray<W64, 4> uop_all_operand;
+		StatArray<W64, 2> uop_1operand;
+		StatArray<W64, 3> uop_2operand;
 
 		StatObj<W64> rob_reads;
 		StatObj<W64> rob_writes;
@@ -575,6 +578,9 @@ namespace OOO_CORE_MODEL {
 			  , RA_status("RA_status", this, register_status)
 			  , RB_status("RB_status", this, register_status)
 			  , RC_status("RC_status", this, register_status)
+			  , uop_all_operand("Uop_operands", this, uop_all_operand_status)
+			  , uop_1operand("Uop_1_operand", this, uop_1operand_status)
+			  , uop_2operand("Uop_2_operand", this, uop_2operand_status)
 			  , rob_reads("rob_reads", this)
 			  , rob_writes("rob_writes", this)
 			  , rename_table_reads("rename_table_reads", this)

@@ -643,6 +643,7 @@ int ReorderBufferEntry::issue() {
         thread.thread_stats.issue.opclass[opclassof(uop.opcode)]++;
 		//Read the RF Cache for any operands
 		int bypass_operands = 0;
+		int operand_status[MAX_OPERANDS-1]={0};
 		foreach (operand, MAX_OPERANDS-1){
 			int rf_index,r_index,reg_status;
 			rf_index=operands[operand]->rfid;
@@ -662,8 +663,48 @@ int ReorderBufferEntry::issue() {
 					thread.thread_stats.RC_status[reg_status]++;
 					break;
 			}
+			operand_status[operand] = operands[operand]->archreg;
 		}
 		thread.thread_stats.bypass_reads[bypass_operands]++;
+		int uop_status = MAX_OPERANDS-1;
+		foreach(i, MAX_OPERANDS-1){
+			if (operand_status[i] == REG_zero || operand_status[i] >= REG_temp0)
+				uop_status--;
+		}
+		thread.thread_stats.uop_all_operand[uop_status]++;
+		if (uop_status == 1){
+			foreach(i, MAX_OPERANDS-1){
+				if (operand_status[i] < REG_temp0 && operand_status[i] != REG_zero){
+					switch (operands[i]->state){
+						case PHYSREG_BYPASS:
+							thread.thread_stats.uop_1operand[0]++;
+							break;
+						default:
+							thread.thread_stats.uop_1operand[1]++;
+					}
+				}
+			}
+		}else if (uop_status == 2){
+			int bypass=0;
+			int RF=0;
+			foreach(i, MAX_OPERANDS-1){
+				if (operand_status[i] < REG_temp0 && operand_status[i] != REG_zero){
+					switch (operands[i]->state){
+						case PHYSREG_BYPASS:
+							bypass++;
+							break;
+						default:
+							RF++;
+					}
+				}
+			}
+			if (RF && bypass)
+				thread.thread_stats.uop_2operand[0]++;
+			else if (RF)
+				thread.thread_stats.uop_2operand[1]++;
+			else if (bypass)
+				thread.thread_stats.uop_2operand[2]++;
+		}
 
         if unlikely (ld|st) {
             int completed = 0;

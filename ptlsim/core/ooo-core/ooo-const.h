@@ -275,6 +275,9 @@ namespace OOO_CORE_MODEL {
 	extern const char* writebacker_names[2];
 	extern const char* bypass_reads_names[4];
 	extern const char* register_status[8];
+	extern const char* uop_all_operand_status[4];
+	extern const char* uop_1operand_status[2];
+	extern const char* uop_2operand_status[3];
 
 };
 

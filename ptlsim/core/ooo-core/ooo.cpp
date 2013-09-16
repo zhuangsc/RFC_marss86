@@ -65,6 +65,10 @@ namespace OOO_CORE_MODEL {
 
 	const char* register_status[8]={"NONE","FREE","WAITING","BYPASS","WRITTEN","ARCH","PENDINGFREE","MAX"};
 
+	const char* uop_all_operand_status[4]={"0_operand", "1_operand", "2_operands", "3_or_more_operands"};
+	const char* uop_1operand_status[2]={"From_bypass", "From_RF"};
+	const char* uop_2operand_status[3]={"Mixed", "All_from_RF", "All_from_bypass"};
+
     const char* fu_names[FU_COUNT] = {
         "ldu0",
         "stu0",
