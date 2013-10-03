@@ -643,7 +643,7 @@ int ReorderBufferEntry::issue() {
         thread.thread_stats.issue.opclass[opclassof(uop.opcode)]++;
 		//Read the RF Cache for any operands
 		int bypass_operands = 0;
-		int operand_status[MAX_OPERANDS-1]={0};
+		int operand_status[MAX_OPERANDS-1] = {0};
 		foreach (operand, MAX_OPERANDS-1){
 			int rf_index,r_index,reg_status;
 			rf_index=operands[operand]->rfid;
@@ -668,7 +668,7 @@ int ReorderBufferEntry::issue() {
 		thread.thread_stats.bypass_reads[bypass_operands]++;
 		int uop_status = MAX_OPERANDS-1;
 		foreach(i, MAX_OPERANDS-1){
-			if (operand_status[i] == REG_zero || operand_status[i] >= REG_temp0)
+			if (operand_status[i] == REG_zero || operand_status[i] == REG_imm || operand_status[i] == REG_mem)
 				uop_status--;
 		}
 		thread.thread_stats.uop_all_operand[uop_status]++;
