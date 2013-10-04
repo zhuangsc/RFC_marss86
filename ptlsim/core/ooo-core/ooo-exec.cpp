@@ -676,7 +676,7 @@ int ReorderBufferEntry::issue() {
 		thread.thread_stats.uop_all_operand[uop_status]++;
 		if (uop_status == 1){
 			foreach(i, MAX_OPERANDS-1){
-				if (operand_status[i] < REG_temp0 && operand_status[i] != REG_zero){
+				if (operand_status[i] != REG_zero && operand_status[i] != REG_imm && operand_status[i] != REG_mem){
 					switch (operands[i]->state){
 						case PHYSREG_BYPASS:
 							thread.thread_stats.uop_1operand[0]++;
@@ -690,7 +690,7 @@ int ReorderBufferEntry::issue() {
 			int bypass=0;
 			int RF=0;
 			foreach(i, MAX_OPERANDS-1){
-				if (operand_status[i] < REG_temp0 && operand_status[i] != REG_zero){
+				if (operand_status[i] != REG_zero && operand_status[i] != REG_imm && operand_status[i] != REG_mem){
 					switch (operands[i]->state){
 						case PHYSREG_BYPASS:
 							bypass++;
