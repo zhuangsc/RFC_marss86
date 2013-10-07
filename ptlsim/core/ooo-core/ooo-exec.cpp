@@ -670,7 +670,7 @@ int ReorderBufferEntry::issue() {
 		thread.thread_stats.bypass_reads[bypass_operands]++;
 		int uop_status = MAX_OPERANDS-1;
 		foreach(i, MAX_OPERANDS-1){
-			if (operand_status[i] == REG_zero){// || operand_status[i] == REG_imm || operand_status[i] == REG_mem)
+			if (operand_status[i] == REG_zero)// || operand_status[i] == REG_imm || operand_status[i] == REG_mem)
 				uop_status--;
 		}
 		thread.thread_stats.uop_all_operand[uop_status]++;
