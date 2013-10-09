@@ -197,8 +197,8 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
 				tags_cached[operand].invalidateslot(i);
-			if (reg->archreg == REG_zero || reg->archreg == REG_imm || reg->archreg == REG_mem)
-				tags_cached[operand].invalidateslot(i);
+			//if (reg->archreg == REG_zero || reg->archreg == REG_imm || reg->archreg == REG_mem)
+				//tags_cached[operand].invalidateslot(i);
 			if (operand==RC)
 				if unlikely(isstore(ROB_IQ[i]->uop.opcode) && !ROB_IQ[i]->load_store_second_phase)
 					tags_cached[operand].invalidateslot(i);
@@ -670,13 +670,13 @@ int ReorderBufferEntry::issue() {
 		thread.thread_stats.bypass_reads[bypass_operands]++;
 		int uop_status = MAX_OPERANDS-1;
 		foreach(i, MAX_OPERANDS-1){
-			if (operand_status[i] == REG_zero)// || operand_status[i] == REG_imm || operand_status[i] == REG_mem)
+			if (operand_status[i] == REG_zero)
 				uop_status--;
 		}
 		thread.thread_stats.uop_all_operand[uop_status]++;
 		if (uop_status == 1){
 			foreach(i, MAX_OPERANDS-1){
-				if (operand_status[i] != REG_zero){// && operand_status[i] != REG_imm && operand_status[i] != REG_mem){
+				if (operand_status[i] != REG_zero){
 					switch (operands[i]->state){
 						case PHYSREG_BYPASS:
 							thread.thread_stats.uop_1operand[0]++;
@@ -690,7 +690,7 @@ int ReorderBufferEntry::issue() {
 			int bypass=0;
 			int RF=0;
 			foreach(i, MAX_OPERANDS-1){
-				if (operand_status[i] != REG_zero){// && operand_status[i] != REG_imm && operand_status[i] != REG_mem){
+				if (operand_status[i] != REG_zero){
 					switch (operands[i]->state){
 						case PHYSREG_BYPASS:
 							bypass++;
