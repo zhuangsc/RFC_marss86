@@ -680,7 +680,7 @@ int PhysicalRegisterFile::min_entry(int* ban_list,int ban_list_size){
 			}
 		}
 		if (is_banned) continue;
-		if(min >= rf_cache.cache_entry[index].reference){
+		if(min > rf_cache.cache_entry[index].reference){
 			min = rf_cache.cache_entry[index].reference;
 			slot = index;
 		}
