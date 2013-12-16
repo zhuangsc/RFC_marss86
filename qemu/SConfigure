@@ -632,8 +632,8 @@ else:
 if not conf.CheckLib('X11'):
     # Check if /usr/X11 exist or not
     import os
-    if os.path.exists('/usr/X11') and os.path.exists('/usr/X11/lib64'):
-        LDFLAGS += " -L/usr/X11/lib64 -lX11"
+    if os.path.exists('/usr/X11R6') and os.path.exists('/usr/X11R6/lib64'):
+        LDFLAGS += " -L/usr/X11R6/lib64 -lX11"
     else:
         print("ERROR: X11 Library Check failed")
 else:

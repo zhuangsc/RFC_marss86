@@ -197,8 +197,6 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
 				tags_cached[operand].invalidateslot(i);
-			//if (reg->archreg == REG_zero || reg->archreg == REG_imm || reg->archreg == REG_mem)
-				//tags_cached[operand].invalidateslot(i);
 			if (operand==RC)
 				if unlikely(isstore(ROB_IQ[i]->uop.opcode) && !ROB_IQ[i]->load_store_second_phase)
 					tags_cached[operand].invalidateslot(i);
