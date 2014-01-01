@@ -185,6 +185,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 
     foreach(i,size){
     	if (!valid[i]||ROB_IQ[i]==0) continue;
+			int entry_cache_wait = 0;
 
     	foreach (operand, operandcount){
 			PhysicalRegister* reg;
@@ -210,7 +211,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     	foreach (operand,operandcount){
 			rf_idx=ROB_IQ[i]->operands[operand]->rfid;
 			r_idx=ROB_IQ[i]->operands[operand]->idx;
-    		if (tags_cached[operand].isvalid(i)){
+			if (tags_cached[operand].isvalid(i)){
 				foreach (oper,operandcount){
 					switch (oper){
 						case RA:
@@ -226,12 +227,14 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				}
 				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC)){
 					tags_cached[operand].invalidateslot(i);
-					(*core).core_stats.iq_cache_waiting++;
-				} else {
-					(*core).core_stats.iq_cache_no_waiting++;
+					entry_cache_wait++;
 				}
 			}
 		}
+		if (entry_cache_wait)
+			(*core).core_stats.iq_cache_waiting++;
+		else
+			(*core).core_stats.iq_cache_no_waiting++;
 	}
 }
 
