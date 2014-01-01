@@ -164,8 +164,8 @@ void IssueQueue<size, operandcount>::clock() {
         allready &= ~tags[operand].valid;
 
     (*this).clock_rf_cache();
-    //foreach (operand, operandcount)
-			//allready &= ~tags_cached[operand].valid;
+    foreach (operand, operandcount)
+			allready &= ~tags_cached[operand].valid;
 }
 
 /**
@@ -187,6 +187,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     foreach(i,size){
     	if (!valid[i] || ROB_IQ[i]==0 ) continue;
 			int entry_cache_wait = 0;
+			int is_ready = 0;
 
     	foreach (operand, operandcount){
 			PhysicalRegister* reg;
@@ -204,12 +205,12 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 					tags_cached[operand].invalidateslot(i);
 		}
 
+		//Fetch on demand policy
 		others_waiting=0;
 		foreach (operand,operandcount-1)
 			others_waiting += tags[operand].isvalid(i);
 		if (others_waiting) continue;
 
-		//Fetch on demand
 		foreach (operand,operandcount){
 			rf_idx=ROB_IQ[i]->operands[operand]->rfid;
 			r_idx=ROB_IQ[i]->operands[operand]->idx;
@@ -232,11 +233,9 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				else
 					entry_cache_wait++;
 			}
-			//FIXME
-			allready &= ~tags_cached[operand].valid;
+			if(!issued[i] && valid[i] && !entry_cache_wait) is_ready = 1;
 		}
-		if (allready[i] == 1 )
-			to_issue++;
+		if (is_ready) to_issue++;
 		if (to_issue <= MAX_ISSUE_WIDTH){
 			if(entry_cache_wait)
 				(*core).core_stats.iq_cache_waiting++;
