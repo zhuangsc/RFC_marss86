@@ -352,8 +352,8 @@ namespace OOO_CORE_MODEL {
 
             assoc_t uopids;
             assoc_t tags[operandcount];
-			assoc_t tags_cached[operandcount];
-			ReorderBufferEntry* ROB_IQ[size];
+						assoc_t tags_cached[operandcount];
+						ReorderBufferEntry* ROB_IQ[size];
 
              /*
               * States:

@@ -164,8 +164,8 @@ void IssueQueue<size, operandcount>::clock() {
         allready &= ~tags[operand].valid;
 
     (*this).clock_rf_cache();
-    foreach (operand, operandcount)
-		allready &= ~tags_cached[operand].valid;
+    //foreach (operand, operandcount)
+			//allready &= ~tags_cached[operand].valid;
 }
 
 /**
@@ -179,12 +179,13 @@ template <int size, int operandcount>
 void IssueQueue<size, operandcount>::clock_rf_cache(){
 
     int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
+		int to_issue = 0;
     //Tick the RF-RF cache bus
     foreach (i, PHYS_REG_FILE_COUNT)
 			(*core).physregfiles[i].cache_tick();
 
     foreach(i,size){
-    	if (!valid[i]||ROB_IQ[i]==0) continue;
+    	if (!valid[i] || ROB_IQ[i]==0 ) continue;
 			int entry_cache_wait = 0;
 
     	foreach (operand, operandcount){
@@ -208,7 +209,8 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			others_waiting += tags[operand].isvalid(i);
 		if (others_waiting) continue;
 
-    	foreach (operand,operandcount){
+		//Fetch on demand
+		foreach (operand,operandcount){
 			rf_idx=ROB_IQ[i]->operands[operand]->rfid;
 			r_idx=ROB_IQ[i]->operands[operand]->idx;
 			if (tags_cached[operand].isvalid(i)){
@@ -225,16 +227,22 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 							break;
 					}
 				}
-				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC)){
+				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC))
 					tags_cached[operand].invalidateslot(i);
+				else
 					entry_cache_wait++;
-				}
 			}
+			//FIXME
+			allready &= ~tags_cached[operand].valid;
 		}
-		if (entry_cache_wait)
-			(*core).core_stats.iq_cache_waiting++;
-		else
-			(*core).core_stats.iq_cache_no_waiting++;
+		if (allready[i] == 1 )
+			to_issue++;
+		if (to_issue <= MAX_ISSUE_WIDTH){
+			if(entry_cache_wait)
+				(*core).core_stats.iq_cache_waiting++;
+			else
+				(*core).core_stats.iq_cache_no_waiting++;
+		}
 	}
 }
 

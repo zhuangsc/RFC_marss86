@@ -963,7 +963,7 @@ bool OooCore::runcycle(void* none) {
         thread->tlbwalk();
     }
 
-	foreach_issueq(clock());
+		foreach_issueq(clock());
     /*
      * Issue whatever is ready
      */
