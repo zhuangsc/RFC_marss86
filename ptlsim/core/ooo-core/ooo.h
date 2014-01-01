@@ -377,9 +377,9 @@ namespace OOO_CORE_MODEL {
 
             IssueQueue(){
                 issueq_id = issueq_id_seq++;
-				foreach (i,size){
-					ROB_IQ[i]=0;
-				}
+								foreach (i,size){
+									ROB_IQ[i]=0;
+								}
             }
             void set_reserved_entries(int num) { reserved_entries = num; }
             bool reset_shared_entries() {
@@ -792,7 +792,7 @@ namespace OOO_CORE_MODEL {
 
      	static const int RF_CACHE_SIZE=8; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
-        static const int RF_CACHE_BANDWIDTH=8; //Buses between the RF and RF Cache
+			static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
     	int cache_enabled;
 		
 

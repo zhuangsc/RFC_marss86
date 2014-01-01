@@ -181,7 +181,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
     //Tick the RF-RF cache bus
     foreach (i, PHYS_REG_FILE_COUNT)
-		(*core).physregfiles[i].cache_tick();
+			(*core).physregfiles[i].cache_tick();
 
     foreach(i,size){
     	if (!valid[i]||ROB_IQ[i]==0) continue;
@@ -224,8 +224,12 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 							break;
 					}
 				}
-				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC))
+				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC)){
 					tags_cached[operand].invalidateslot(i);
+					(*core).core_stats.iq_cache_waiting++;
+				} else {
+					(*core).core_stats.iq_cache_no_waiting++;
+				}
 			}
 		}
 	}

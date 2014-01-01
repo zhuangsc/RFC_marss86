@@ -724,6 +724,8 @@ namespace OOO_CORE_MODEL {
 		StatObj<W64> iq_writes;
 		StatObj<W64> iq_fp_reads;
 		StatObj<W64> iq_fp_writes;
+		StatObj<W64> iq_cache_waiting;
+		StatObj<W64> iq_cache_no_waiting;
 
 		OooCoreStats(const char *name, Statable *parent)
 			: dispatch(parent)
@@ -735,6 +737,8 @@ namespace OOO_CORE_MODEL {
 			  , iq_writes("iq_writes", parent)
 			  , iq_fp_reads("iq_fp_reads", parent)
 			  , iq_fp_writes("iq_fp_writes", parent)
+				, iq_cache_waiting("iq_cache_waiting", parent)
+				, iq_cache_no_waiting("iq_cache_no_waiting", parent)
 		{ }
     };
 
