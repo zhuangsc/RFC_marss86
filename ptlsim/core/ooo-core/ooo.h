@@ -417,6 +417,8 @@ namespace OOO_CORE_MODEL {
             void reset(W8 coreid, W8 threadid, OooCore* core);
             void clock();
 			void clock_rf_cache();
+			void prefetch(ReorderBufferEntry* first_pair, ReorderBufferEntry& rob);
+			void prefetch_first_pair(ReorderBufferEntry& rob);
             bool insert(tag_t uopid, const tag_t* operands, const tag_t* preready, ReorderBufferEntry* rob);
             bool broadcast(tag_t uopid);
             int issue(int previd = -1);
@@ -792,7 +794,7 @@ namespace OOO_CORE_MODEL {
 
      	static const int RF_CACHE_SIZE=8; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
-			static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
+		static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
     	int cache_enabled;
 		
 

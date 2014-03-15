@@ -165,7 +165,7 @@ void IssueQueue<size, operandcount>::clock() {
 
     (*this).clock_rf_cache();
     foreach (operand, operandcount)
-			allready &= ~tags_cached[operand].valid;
+		allready &= ~tags_cached[operand].valid;
 }
 
 /**
@@ -179,15 +179,16 @@ template <int size, int operandcount>
 void IssueQueue<size, operandcount>::clock_rf_cache(){
 
     int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
-		int to_issue = 0;
-    //Tick the RF-RF cache bus
+	int to_issue = 0;
+    //Tick the RF to RF-cache bus
     foreach (i, PHYS_REG_FILE_COUNT)
-			(*core).physregfiles[i].cache_tick();
+		(*core).physregfiles[i].cache_tick();
 
     foreach(i,size){
-    	if (!valid[i] || ROB_IQ[i]==0 ) continue;
-			int entry_cache_wait = 0;
-			int is_ready = 0;
+    	if (!valid[i] || ROB_IQ[i]==0 ) 
+			continue;
+		int entry_cache_wait = 0;
+		int is_ready = 0;
 
     	foreach (operand, operandcount){
 			PhysicalRegister* reg;
@@ -205,7 +206,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 					tags_cached[operand].invalidateslot(i);
 		}
 
-		//Fetch on demand policy
+		//fetch-on-demand policy
 		others_waiting=0;
 		foreach (operand,operandcount-1)
 			others_waiting += tags[operand].isvalid(i);
@@ -242,6 +243,58 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			else
 				(*core).core_stats.iq_cache_no_waiting++;
 		}
+	}
+}
+
+template <int size, int operandcount>
+void IssueQueue<size, operandcount>::prefetch_first_pair(ReorderBufferEntry& rob){
+	int slot = rob.iqslot;
+	int dest_rf = rob.physreg->rfid;
+	int dest_idx = rob.physreg->idx;
+	
+	for(int i = slot; i < size; i++){
+		if (!valid[i] || ROB_IQ[i]==0 ) 
+			continue;
+		foreach(operand, operandcount){
+			int rf_idx = ROB_IQ[i]->operands[operand]->rfid;
+			int idx = ROB_IQ[i]->operands[operand]->idx;
+			if(rf_idx == dest_rf && idx == dest_idx)
+				prefetch(ROB_IQ[i], rob);
+		}
+	}
+}
+
+template <int size, int operandcount>
+void IssueQueue<size, operandcount>::prefetch(ReorderBufferEntry* first_pair, ReorderBufferEntry& rob){
+	int dest_rf = rob.physreg->rfid;
+	int dest_idx = rob.physreg->idx;
+	int rf_idx, idx;
+	int n;
+	int RA_idx, RB_idx, RC_idx;
+	foreach(operand, operandcount){
+		rf_idx = first_pair->operands[operand]->rfid;
+		idx = first_pair->operands[operand]->idx;
+		switch (operand){
+			case RA:
+				RA_idx = first_pair->operands[operand]->idx;
+				break;
+			case RB:
+				RB_idx = first_pair->operands[operand]->idx;
+				break;
+			case RC:
+				RC_idx = first_pair->operands[operand]->idx;
+				break;
+		}
+		if(rf_idx == dest_rf && rf_idx == dest_idx){
+			n = operand;
+		}
+	}
+	foreach(operand, operandcount){
+		rf_idx = first_pair->operands[operand]->rfid;
+		idx = first_pair->operands[operand]->idx;
+		if (operand == n)
+			continue;
+		(*core).physregfiles[rf_idx].read_request(idx,RA_idx,RB_idx,RC_idx);
 	}
 }
 
@@ -2755,8 +2808,10 @@ int OooCore::issue(int cluster) {
             default:
                 break;
         }
-        if(rc != ISSUE_SKIPPED)
+        if(rc != ISSUE_SKIPPED){
             issuecount++;
+			issueq_operation_on_cluster_no_res(getcore(), cluster, prefetch_first_pair(rob));
+		}
     }
 
     per_cluster_stats_update(issue.width,

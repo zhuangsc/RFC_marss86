@@ -561,16 +561,19 @@ void PhysicalRegisterFile::read_cache(int index) {
 }
 
 int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int index_RC){ 
-	if (!cache_activated()) return 100; //Should never be reached, arbitrary number
+	if (!cache_activated()) 
+		return 100; //Should never be reached, arbitrary number
+	//At stage : writeback 1
 	if ((*this)[index].state == PHYSREG_WRITTEN && !(*this)[index].register_available)
 		return CACHE_READ_LATENCY;
 	//Already at the RF-cache
 	if (is_cached(index))
 		return 0;
-	//Already in transmission, return the cycles need to complete
+	//Already in transmission, return the cycles left to complete
 	foreach (i, RF_CACHE_BANDWIDTH)
 		if (rf_cache_bus.bus_entry[i].idx == index)
 			return rf_cache_bus.bus_entry[i].latency;
+	//Not of the above cases, issue the request
 	if(rf_cache_bus.request_on_the_fly < RF_CACHE_BANDWIDTH){
 		bus_entry_insert(index,index_RA,index_RB,index_RC);
 		return CACHE_READ_LATENCY;
@@ -963,7 +966,7 @@ bool OooCore::runcycle(void* none) {
         thread->tlbwalk();
     }
 
-		foreach_issueq(clock());
+	foreach_issueq(clock());
     /*
      * Issue whatever is ready
      */
