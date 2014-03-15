@@ -289,7 +289,7 @@ void IssueQueue<size, operandcount>::prefetch(ReorderBufferEntry* first_pair, Re
 			n = operand;
 		}
 	}
-	foreach(operand, operandcount){
+	foreach(operand, operandcount-1){
 		rf_idx = first_pair->operands[operand]->rfid;
 		idx = first_pair->operands[operand]->idx;
 		if (operand == n)
