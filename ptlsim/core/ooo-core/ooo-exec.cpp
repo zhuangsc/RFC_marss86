@@ -273,7 +273,7 @@ void IssueQueue<size, operandcount>::prefetch(ReorderBufferEntry* first_pair, Re
 	int dest_rf = rob.physreg->rfid;
 	int dest_idx = rob.physreg->idx;
 	int rf_idx, idx;
-	int n;
+	int n = 0;
 	int RA_idx, RB_idx, RC_idx;
 	foreach(operand, operandcount){
 		rf_idx = first_pair->operands[operand]->rfid;
