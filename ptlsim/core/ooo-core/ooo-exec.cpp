@@ -251,6 +251,7 @@ void IssueQueue<size, operandcount>::prefetch_first_pair(ReorderBufferEntry& rob
 	int slot = rob.iqslot;
 	int dest_rf = rob.physreg->rfid;
 	int dest_idx = rob.physreg->idx;
+	int found = 0;
 	
 	for(int i = slot; i < size; i++){
 		if (!valid[i] || ROB_IQ[i]==0 ) 
@@ -258,9 +259,12 @@ void IssueQueue<size, operandcount>::prefetch_first_pair(ReorderBufferEntry& rob
 		foreach(operand, operandcount){
 			int rf_idx = ROB_IQ[i]->operands[operand]->rfid;
 			int idx = ROB_IQ[i]->operands[operand]->idx;
-			if(rf_idx == dest_rf && idx == dest_idx)
+			if(rf_idx == dest_rf && idx == dest_idx){
 				prefetch(ROB_IQ[i], rob);
+				found = 1;
+			}
 		}
+		if(found) break;
 	}
 }
 
