@@ -2570,6 +2570,11 @@ int OooCore::issue(int cluster) {
         assert(inrange(idx, 0, ROB_SIZE-1));
         ReorderBufferEntry& rob = thread->ROB[idx];
 
+		if(rob.rf_phase == 0){
+			rob.rf_phase = 1;
+			continue;
+		}
+
 		if unlikely (opclassof(rob.uop.opcode) == OPCLASS_FP)
 			core_stats.iq_fp_reads++;
 		else

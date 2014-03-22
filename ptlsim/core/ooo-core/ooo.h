@@ -521,6 +521,7 @@ namespace OOO_CORE_MODEL {
         W8   coreid;
         OooCore* core;
         W64  tlb_miss_init_cycle;
+		W8   rf_phase;
 
         W8   threadid;
         byte fu;

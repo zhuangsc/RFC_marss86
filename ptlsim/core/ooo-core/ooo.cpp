@@ -981,6 +981,7 @@ void ReorderBufferEntry::reset() {
     issued = 0;
     generated_addr = original_addr = cache_data = 0;
     annul_flag = 0;
+	rf_phase = 0;
 }
 
 bool ReorderBufferEntry::ready_to_issue() const {
