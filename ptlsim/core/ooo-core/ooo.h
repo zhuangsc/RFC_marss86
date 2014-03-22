@@ -983,6 +983,7 @@ namespace OOO_CORE_MODEL {
         StateList rob_ready_to_load_list[MAX_CLUSTERS];      // Ready to load (all operands ready)
         StateList rob_issued_list[MAX_CLUSTERS];             // Issued and in progress (or for loads, returned here after address is generated)
         StateList rob_completed_list[MAX_CLUSTERS];          // Completed and result in transit for local and global forwarding
+		StateList rob_writeback_phase1_list[MAX_CLUSTERS];
         StateList rob_ready_to_writeback_list[MAX_CLUSTERS]; // Completed; result ready to writeback in parallel across all cluster register files
         StateList rob_cache_miss_list;                       // Loads only: wait for cache miss to be serviced
         StateList rob_tlb_miss_list;                         // TLB miss waiting to be serviced on one or more levels
@@ -1058,6 +1059,7 @@ namespace OOO_CORE_MODEL {
 
         int commit();
         int writeback(int cluster);
+		int writeback_phase1(int cluster);
         int transfer(int cluster);
         int complete(int cluster);
         int dispatch();
@@ -1120,6 +1122,7 @@ namespace OOO_CORE_MODEL {
         // Bandwidth counters:
         int commitcount;
         int writecount;
+		int writecount_phase1;
         int dispatchcount;
 
         byte round_robin_tid;

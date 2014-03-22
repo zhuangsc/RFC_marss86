@@ -1460,7 +1460,7 @@ int ThreadContext::transfer(int cluster) {
         rob->forward_cycle++;
         if unlikely (rob->forward_cycle > MAX_FORWARDING_LATENCY) {
             rob->forward_cycle = MAX_FORWARDING_LATENCY;
-            rob->changestate(rob_ready_to_writeback_list[rob->cluster]);
+            rob->changestate(rob_writeback_phase1_list[rob->cluster]);
         }
 
 		thread_stats.rob_reads++;
@@ -1529,6 +1529,16 @@ int ThreadContext::writeback(int cluster) {
     per_cluster_stats_update(writeback.width,
             cluster, [core.writecount]++);
     return core.writecount;
+}
+
+int ThreadContext::writeback_phase1(int cluster){
+	ReorderBufferEntry* rob;
+	foreach_list_mutable(rob_writeback_phase1_list[cluster], rob, entry, nextentry){
+		if unlikely (core.writecount_phase1 >= WRITEBACK_WIDTH) 
+			break;
+		rob->changestate(rob_ready_to_writeback_list[cluster]);
+	}
+	return core.writecount_phase1;
 }
 
 /*

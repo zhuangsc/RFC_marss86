@@ -215,6 +215,7 @@ void ThreadContext::init() {
     InitClusteredROBList(rob_ready_to_load_list, "ready-to-load", ROB_STATE_IN_ISSUE_QUEUE);
     InitClusteredROBList(rob_issued_list, "issued", 0);
     InitClusteredROBList(rob_completed_list, "completed", ROB_STATE_READY);
+	InitClusteredROBList(rob_writeback_phase1_list, "writeback-phase1", ROB_STATE_READY);
     InitClusteredROBList(rob_ready_to_writeback_list, "ready-to-write", ROB_STATE_READY);
     rob_cache_miss_list("cache-miss", rob_states, 0);
     rob_tlb_miss_list("tlb-miss", rob_states, 0);
@@ -621,6 +622,7 @@ bool OooCore::runcycle(void* none) {
     int commitrc[threadcount];
     commitcount = 0;
     writecount = 0;
+	writecount_phase1 = 0;
 
     if (logable(9)) {
         ptl_logfile << "OooCore::run():thread-commit\n";
@@ -648,6 +650,7 @@ bool OooCore::runcycle(void* none) {
 
         commitrc[tid] = thread->commit();
         for_each_cluster(j) thread->writeback(j);
+		for_each_cluster(j) thread->writeback_phase1(j);
         for_each_cluster(j) thread->transfer(j);
     }
 

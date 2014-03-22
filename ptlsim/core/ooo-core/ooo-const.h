@@ -81,11 +81,11 @@
 
 /* functional units */
 #ifndef OOO_ALU_FU_COUNT
-#define OOO_ALU_FU_COUNT 2
+#define OOO_ALU_FU_COUNT 4
 #endif
 
 #ifndef OOO_FPU_FU_COUNT
-#define OOO_FPU_FU_COUNT 2
+#define OOO_FPU_FU_COUNT 4
 #endif
 
 #ifndef OOO_LOAD_FU_COUNT
