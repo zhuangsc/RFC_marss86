@@ -698,26 +698,6 @@ int PhysicalRegisterFile::ban_list_add(int* ban_list, int index, int ban_list_in
 	return ban_list_index;
 }
 
-/*
-int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
-	if (outgoing_entry<0) return 0;
-	int match=0,result;
-	foreach (i, RF_CACHE_BANDWIDTH){
-		if(incoming_entry == rf_cache_bus.bus_entry[i].idx){
-			if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RA)
-				match++;
-			if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RB)
-				match++;
-			if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].index_RC)
-				match++;
-			break;
-		}
-	}
-	result=match?0:1;
-	return result;
-}
-*/
-
 int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 	if (outgoing_entry<0) return 0;
 	int match=0,result;
