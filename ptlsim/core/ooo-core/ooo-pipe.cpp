@@ -1455,12 +1455,12 @@ int ThreadContext::complete(int cluster) {
 int ThreadContext::transfer(int cluster) {
 
     ReorderBufferEntry* rob;
-    foreach_list_mutable(rob_completed_list[cluster], rob, entry, nextentry) {
+    foreach_list_mutable(rob_writeback_phase1_list[cluster], rob, entry, nextentry) {
         rob->forward();
         rob->forward_cycle++;
         if unlikely (rob->forward_cycle > MAX_FORWARDING_LATENCY) {
             rob->forward_cycle = MAX_FORWARDING_LATENCY;
-            rob->changestate(rob_writeback_phase1_list[rob->cluster]);
+            rob->changestate(rob_ready_to_writeback_list[rob->cluster]);
         }
 
 		thread_stats.rob_reads++;
@@ -1533,10 +1533,10 @@ int ThreadContext::writeback(int cluster) {
 
 int ThreadContext::writeback_phase1(int cluster){
 	ReorderBufferEntry* rob;
-	foreach_list_mutable(rob_writeback_phase1_list[cluster], rob, entry, nextentry){
+	foreach_list_mutable(rob_completed_list[cluster], rob, entry, nextentry){
 		if unlikely (core.writecount_phase1 >= WRITEBACK_WIDTH) 
 			break;
-		rob->changestate(rob_ready_to_writeback_list[cluster]);
+		rob->changestate(rob_writeback_phase1_list[cluster]);
 	}
 	return core.writecount_phase1;
 }
