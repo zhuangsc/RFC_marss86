@@ -650,8 +650,8 @@ bool OooCore::runcycle(void* none) {
 
         commitrc[tid] = thread->commit();
         for_each_cluster(j) thread->writeback(j);
-		for_each_cluster(j) thread->writeback_phase1(j);
         for_each_cluster(j) thread->transfer(j);
+		for_each_cluster(j) thread->writeback_phase1(j);
     }
 
     if (logable(100)) {
