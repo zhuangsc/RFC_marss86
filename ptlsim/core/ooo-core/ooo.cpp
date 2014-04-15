@@ -674,6 +674,7 @@ bool OooCore::runcycle(void* none) {
         thread->tlbwalk();
     }
 
+    foreach_issueq(clock());
     /*
      * Issue whatever is ready
      */
@@ -765,7 +766,7 @@ bool OooCore::runcycle(void* none) {
      * Always clock the issue queues: they're independent of all threads
      */
 
-    foreach_issueq(clock());
+//    foreach_issueq(clock());
 
     /*
      * Advance the round robin priority index
