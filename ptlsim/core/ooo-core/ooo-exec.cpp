@@ -2573,6 +2573,8 @@ int OooCore::issue(int cluster) {
 		if(rob.rf_phase == 0){
 			rob.rf_phase = 1;
 			continue;
+		}else{
+			rob.rf_phase = 0;
 		}
 
 		if unlikely (opclassof(rob.uop.opcode) == OPCLASS_FP)
