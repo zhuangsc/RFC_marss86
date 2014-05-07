@@ -23,6 +23,9 @@
 #include <ooo-const.h>
 #include <ooo-stats.h>
 
+#include <time.h>
+#include <stdlib.h>
+
 /* With these disabled, simulation is faster */
 #define ENABLE_CHECKS
 #define ENABLE_LOGGING
@@ -794,7 +797,7 @@ namespace OOO_CORE_MODEL {
 
      	static const int RF_CACHE_SIZE=8; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
-		static const int RF_CACHE_BANDWIDTH=8; //Buses between the RF and RF Cache
+		static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
     	int cache_enabled;
 		
 
@@ -802,8 +805,11 @@ namespace OOO_CORE_MODEL {
     		int idx;
     		W64 reference;
     		int valid;
+			int striken;
+			int striken_cycles;
     		ReorderBufferEntry* rob_in_cache;
     	};
+
 		struct struct_cache{
 			struct cache_entries cache_entry[RF_CACHE_SIZE];
 			int cache_entry_occupancy;
@@ -834,6 +840,7 @@ namespace OOO_CORE_MODEL {
         bool cleanup();
 
 		inline int cache_activated() { return cache_enabled;}
+		inline int get_cache_size(){return RF_CACHE_SIZE;}
     	int is_cached(int index);
         void cache_tick();
     	void read_cache(int index);
@@ -849,6 +856,13 @@ namespace OOO_CORE_MODEL {
     	int min_entry(int* ban_list,int ban_list_size);
 		int ban_list_add(int* ban_list, int index, int ban_list_index);
 		int entry_valid(int outgoing_entry, int incoming_entry);
+
+		int SEU_gen();
+		void ins_seu(int candidate);
+		void tick_seu_cycles();
+		int is_striken(int index);
+		int striken_ready(int index);
+		int issue_striken(int index);
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }

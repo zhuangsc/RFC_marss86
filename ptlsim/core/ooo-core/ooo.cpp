@@ -429,6 +429,7 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 		this->rf_cache.cache_entry[i].reference = 0;
 		this->rf_cache.cache_entry[i].valid = 0;
 		this->rf_cache.cache_entry[i].rob_in_cache = 0;
+		this->rf_cache.cache_entry[i].striken = 0;
 	}
 
 	this->rf_cache_bus.request_on_the_fly = 0;
@@ -440,6 +441,9 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 		this->rf_cache_bus.bus_entry[i].index_RC = -1;
 		this->rf_cache_bus.remove_pool[i] = -1;
 	}
+
+	//Set the seed for SEU generator
+	srand(time(0));
 }
 
 /**
@@ -630,6 +634,8 @@ void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
 	rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
 	rf_cache.cache_entry[entry].reference = sim_cycle;
 	rf_cache.cache_entry[entry].valid = 1;
+	rf_cache.cache_entry[entry].striken = 0;
+	rf_cache.cache_entry[entry].striken_cycles = -2;
 	rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
 }
 
@@ -639,6 +645,8 @@ void PhysicalRegisterFile::remove_cache_entry (int idx){
 			rf_cache.cache_entry[i].valid = 0;
 			rf_cache.cache_entry[i].reference = 0;
 			rf_cache.cache_entry[i].idx = -1;
+			rf_cache.cache_entry[i].striken = 0;
+			rf_cache.cache_entry[i].striken_cycles = -2;
 			rf_cache.cache_entry[i].rob_in_cache = 0;
 			if (rf_cache.cache_entry_occupancy > 0)
 				rf_cache.cache_entry_occupancy--;
@@ -716,6 +724,74 @@ int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 	result = match?0:1;
 	return result;
 }
+
+int PhysicalRegisterFile::SEU_gen(){
+	int SEU_entry_candidate;
+	int SEU_rf_candidate;
+	int r;
+	r = rand();
+	SEU_entry_candidate = (r % RF_CACHE_SIZE);
+	SEU_rf_candidate = (r % 2) * RF_CACHE_SIZE;
+	return (SEU_entry_candidate + SEU_rf_candidate);
+}
+
+void PhysicalRegisterFile::ins_seu(int candidate){
+	if (rf_cache.cache_entry[candidate].valid) {
+		rf_cache.cache_entry[candidate].striken = 1;
+		rf_cache.cache_entry[candidate].striken_cycles = -2;
+	}
+}
+
+void PhysicalRegisterFile::tick_seu_cycles(){
+	foreach (i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].striken){
+			if (rf_cache.cache_entry[i].striken_cycles > 0)
+				rf_cache.cache_entry[i].striken_cycles--;
+			else if (rf_cache.cache_entry[i].striken_cycles == 0)
+				rf_cache.cache_entry[i].striken_cycles = -1;
+		}
+	}
+}
+
+int PhysicalRegisterFile::is_striken(int index){
+	if (!index) 
+		return 0;
+	foreach (i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].idx == index && rf_cache.cache_entry[i].striken)
+			return 1;
+	}
+	return 0;
+}
+
+int PhysicalRegisterFile::striken_ready(int index){
+	if (!index) 
+		return 1;
+	foreach (i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].idx == index){
+			if (rf_cache.cache_entry[i].striken_cycles < 0){
+				rf_cache.cache_entry[i].striken_cycles = CACHE_READ_LATENCY;
+				return 0;
+			}else if (rf_cache.cache_entry[i].striken_cycles == 0){
+				return 1;
+			}else{
+				return 0;
+			}
+		}
+	}
+	return 0;
+}
+
+int PhysicalRegisterFile::issue_striken(int index){
+	if (!index) 
+		return 0;
+	foreach (i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].idx == index && rf_cache.cache_entry[i].striken)
+			if (rf_cache.cache_entry[i].striken_cycles == -2)
+				return 1;
+	}
+	return 0;
+}
+
 
 namespace OOO_CORE_MODEL {
     ostream& operator <<(ostream& os, const PhysicalRegister& physreg) {

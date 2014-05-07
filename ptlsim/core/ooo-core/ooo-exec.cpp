@@ -181,8 +181,10 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
 	int to_issue = 0;
     //Tick the RF to RF-cache bus
-    foreach (i, PHYS_REG_FILE_COUNT)
+    foreach (i, PHYS_REG_FILE_COUNT) {
 		(*core).physregfiles[i].cache_tick();
+		(*core).physregfiles[i].tick_seu_cycles();
+	}
 
     foreach(i,size){
     	if (!valid[i] || ROB_IQ[i]==0 ) 
@@ -195,9 +197,13 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			reg=ROB_IQ[i]->operands[operand];
 			rf_idx=reg->rfid;
 			r_idx=reg->idx;
-			if ((*core).physregfiles[rf_idx].cache_activated())
+			if ((*core).physregfiles[rf_idx].cache_activated()) {
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
 					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+				if ((*core).physregfiles[rf_idx].is_striken(r_idx))
+					if (!(*core).physregfiles[rf_idx].striken_ready(r_idx))
+						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+			}
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
 				tags_cached[operand].invalidateslot(i);
@@ -242,6 +248,19 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				(*core).core_stats.iq_cache_waiting++;
 			else
 				(*core).core_stats.iq_cache_no_waiting++;
+		}
+	}
+
+	//Insert soft errors after clocking the rf cache
+	if (sim_cycle%100 == 0){
+		int candidate;
+		int csize;
+		csize = (*core).physregfiles[0].get_cache_size();
+		candidate = (*core).physregfiles[0].SEU_gen();
+		if ( candidate < csize ){
+			(*core).physregfiles[0].ins_seu(candidate);
+		}else{
+			(*core).physregfiles[1].ins_seu(candidate-csize);
 		}
 	}
 }
@@ -637,6 +656,10 @@ int ReorderBufferEntry::issue() {
     PhysicalRegister& ra = *operands[RA];
     PhysicalRegister& rb = *operands[RB];
     PhysicalRegister& rc = *operands[RC];
+
+	if ( core.physregfiles[ra.rfid].is_striken(ra.idx) || \
+			core.physregfiles[rb.rfid].is_striken(rb.idx) || \
+			core.physregfiles[rc.rfid].is_striken(rc.idx))
 
     // FIXME : Failsafe operation. Sometimes an entry is issed even though its
     // operands are not yet ready, so in this case simply replay the issue
