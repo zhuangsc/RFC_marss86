@@ -180,6 +180,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 
     int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
 	int to_issue = 0;
+	
     //Tick the RF to RF-cache bus
     foreach (i, PHYS_REG_FILE_COUNT) {
 		(*core).physregfiles[i].cache_tick();
