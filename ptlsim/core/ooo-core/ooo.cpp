@@ -736,7 +736,7 @@ int PhysicalRegisterFile::SEU_gen(){
 }
 
 void PhysicalRegisterFile::ins_seu(int candidate){
-	if (rf_cache.cache_entry[candidate].valid) {
+	if (rf_cache.cache_entry[candidate].valid && !rf_cache.cache_entry[candidate].striken) {
 		rf_cache.cache_entry[candidate].striken = 1;
 		rf_cache.cache_entry[candidate].striken_cycles = -2;
 	}
@@ -783,13 +783,13 @@ int PhysicalRegisterFile::striken_ready(int index){
 
 int PhysicalRegisterFile::issue_striken(int index){
 	if (!index) 
-		return 0;
+		return 1;
 	foreach (i, RF_CACHE_SIZE){
 		if (rf_cache.cache_entry[i].idx == index && rf_cache.cache_entry[i].striken)
 			if (rf_cache.cache_entry[i].striken_cycles == -2)
-				return 1;
+				return 0;
 	}
-	return 0;
+	return 1;
 }
 
 

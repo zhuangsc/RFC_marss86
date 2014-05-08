@@ -253,7 +253,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 	}
 
 	//Insert soft errors after clocking the rf cache
-	if (sim_cycle%100 == 0){
+	if (sim_cycle%10000 == 0){
 		int candidate;
 		int csize;
 		csize = (*core).physregfiles[0].get_cache_size();
@@ -658,9 +658,14 @@ int ReorderBufferEntry::issue() {
     PhysicalRegister& rb = *operands[RB];
     PhysicalRegister& rc = *operands[RC];
 
-	if ( core.physregfiles[ra.rfid].is_striken(ra.idx) || \
-			core.physregfiles[rb.rfid].is_striken(rb.idx) || \
-			core.physregfiles[rc.rfid].is_striken(rc.idx))
+	if ( !core.physregfiles[ra.rfid].issue_striken(ra.idx) || \
+			!core.physregfiles[rb.rfid].issue_striken(rb.idx) || \
+			!core.physregfiles[rc.rfid].issue_striken(rc.idx)) {
+//			issueq_operation_on_cluster(core, cluster, replay(iqslot));
+//			return ISSUE_SKIPPED;
+			replay();
+			return ISSUE_NEEDS_REPLAY;
+	}
 
     // FIXME : Failsafe operation. Sometimes an entry is issed even though its
     // operands are not yet ready, so in this case simply replay the issue
