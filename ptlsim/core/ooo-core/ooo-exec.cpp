@@ -184,14 +184,12 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     //Tick the RF to RF-cache bus
     foreach (i, PHYS_REG_FILE_COUNT) {
 		(*core).physregfiles[i].cache_tick();
-		(*core).physregfiles[i].tick_seu_cycles();
 	}
 
     foreach(i,size){
+
     	if (!valid[i] || ROB_IQ[i]==0 ) 
 			continue;
-		int entry_cache_wait = 0;
-		int is_ready = 0;
 
     	foreach (operand, operandcount){
 			PhysicalRegister* reg;
@@ -201,9 +199,12 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			if ((*core).physregfiles[rf_idx].cache_activated()) {
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
 					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
-				if ((*core).physregfiles[rf_idx].is_striken(r_idx))
-					if (!(*core).physregfiles[rf_idx].striken_ready(r_idx))
-						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+//				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
+//					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
+//						(*core).physregfiles[rf_idx].seu_register(r_idx);
+//						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+//					}
+//				}
 			}
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
@@ -212,6 +213,10 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				if unlikely(isstore(ROB_IQ[i]->uop.opcode) && !ROB_IQ[i]->load_store_second_phase)
 					tags_cached[operand].invalidateslot(i);
 		}
+
+
+		int entry_cache_wait = 0;
+		int is_ready = 0;
 
 		//fetch-on-demand policy
 		others_waiting=0;
@@ -240,10 +245,19 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 					tags_cached[operand].invalidateslot(i);
 				else
 					entry_cache_wait++;
+
+				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
+					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
+						(*core).physregfiles[rf_idx].seu_register(r_idx);
+						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+					}
+				}
 			}
-			if(!issued[i] && valid[i] && !entry_cache_wait) is_ready = 1;
+			if(!issued[i] && valid[i] && !entry_cache_wait) 
+				is_ready = 1;
 		}
-		if (is_ready) to_issue++;
+		if (is_ready) 
+			to_issue++;
 		if (to_issue <= MAX_ISSUE_WIDTH){
 			if(entry_cache_wait)
 				(*core).core_stats.iq_cache_waiting++;
@@ -251,9 +265,13 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				(*core).core_stats.iq_cache_no_waiting++;
 		}
 	}
+	
+//	foreach (i, PHYS_REG_FILE_COUNT) {
+//		(*core).physregfiles[i].seu_reset_buffer();
+//	}
 
 	//Insert soft errors after clocking the rf cache
-	if (sim_cycle%10000 == 0){
+	if (sim_cycle%100 == 0){
 		int candidate;
 		int csize;
 		csize = (*core).physregfiles[0].get_cache_size();
@@ -658,14 +676,39 @@ int ReorderBufferEntry::issue() {
     PhysicalRegister& rb = *operands[RB];
     PhysicalRegister& rc = *operands[RC];
 
-	if ( !core.physregfiles[ra.rfid].issue_striken(ra.idx) || \
-			!core.physregfiles[rb.rfid].issue_striken(rb.idx) || \
-			!core.physregfiles[rc.rfid].issue_striken(rc.idx)) {
-//			issueq_operation_on_cluster(core, cluster, replay(iqslot));
-//			return ISSUE_SKIPPED;
-			replay();
-			return ISSUE_NEEDS_REPLAY;
+	int rep = 0;
+	if(core.physregfiles[ra.rfid].cache_activated() && core.physregfiles[ra.rfid].is_cached(ra.idx)){
+		if(core.physregfiles[ra.rfid].is_striken(ra.idx)){
+			if(!core.physregfiles[ra.rfid].seu_availability(ra.idx)){
+				core.physregfiles[ra.rfid].seu_register(ra.idx);
+				rep++;
+			}
+		}
 	}
+
+	if(core.physregfiles[rb.rfid].cache_activated() && core.physregfiles[rb.rfid].is_cached(rb.idx)){
+		if(core.physregfiles[rb.rfid].is_striken(rb.idx)){
+			if(!core.physregfiles[rb.rfid].seu_availability(rb.idx)){
+				core.physregfiles[rb.rfid].seu_register(rb.idx);
+				rep++;
+			}
+		}
+	}
+
+	if(core.physregfiles[rc.rfid].cache_activated() && core.physregfiles[rc.rfid].is_cached(rc.idx)){
+		if(core.physregfiles[rc.rfid].is_striken(rc.idx)){
+			if(!core.physregfiles[rc.rfid].seu_availability(rc.idx)){
+				core.physregfiles[rc.rfid].seu_register(rc.idx);
+				rep++;
+			}
+		}
+	}
+
+	if(rep){
+		replay();
+		return ISSUE_NEEDS_REPLAY;
+	}
+
 
     // FIXME : Failsafe operation. Sometimes an entry is issed even though its
     // operands are not yet ready, so in this case simply replay the issue

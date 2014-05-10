@@ -443,6 +443,12 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 	}
 
 	//Set the seed for SEU generator
+	foreach (i, RF_CACHE_SIZE){
+		this->rf_cache.seu_buffer[i] = -1;
+		this->rf_cache.seu_buffer_next[i] = -1;
+	}
+	this->rf_cache.seu_buffer_p = 0;
+	this->rf_cache.seu_buffer_pn = 0;
 	srand(time(0));
 }
 
@@ -635,7 +641,6 @@ void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
 	rf_cache.cache_entry[entry].reference = sim_cycle;
 	rf_cache.cache_entry[entry].valid = 1;
 	rf_cache.cache_entry[entry].striken = 0;
-	rf_cache.cache_entry[entry].striken_cycles = -2;
 	rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
 }
 
@@ -646,7 +651,6 @@ void PhysicalRegisterFile::remove_cache_entry (int idx){
 			rf_cache.cache_entry[i].reference = 0;
 			rf_cache.cache_entry[i].idx = -1;
 			rf_cache.cache_entry[i].striken = 0;
-			rf_cache.cache_entry[i].striken_cycles = -2;
 			rf_cache.cache_entry[i].rob_in_cache = 0;
 			if (rf_cache.cache_entry_occupancy > 0)
 				rf_cache.cache_entry_occupancy--;
@@ -736,21 +740,8 @@ int PhysicalRegisterFile::SEU_gen(){
 }
 
 void PhysicalRegisterFile::ins_seu(int candidate){
-	if (rf_cache.cache_entry[candidate].valid && !rf_cache.cache_entry[candidate].striken) {
+	if (rf_cache.cache_entry[candidate].valid) 
 		rf_cache.cache_entry[candidate].striken = 1;
-		rf_cache.cache_entry[candidate].striken_cycles = -2;
-	}
-}
-
-void PhysicalRegisterFile::tick_seu_cycles(){
-	foreach (i, RF_CACHE_SIZE){
-		if (rf_cache.cache_entry[i].striken){
-			if (rf_cache.cache_entry[i].striken_cycles > 0)
-				rf_cache.cache_entry[i].striken_cycles--;
-			else if (rf_cache.cache_entry[i].striken_cycles == 0)
-				rf_cache.cache_entry[i].striken_cycles = -1;
-		}
-	}
 }
 
 int PhysicalRegisterFile::is_striken(int index){
@@ -763,34 +754,32 @@ int PhysicalRegisterFile::is_striken(int index){
 	return 0;
 }
 
-int PhysicalRegisterFile::striken_ready(int index){
-	if (!index) 
-		return 1;
-	foreach (i, RF_CACHE_SIZE){
-		if (rf_cache.cache_entry[i].idx == index){
-			if (rf_cache.cache_entry[i].striken_cycles < 0){
-				rf_cache.cache_entry[i].striken_cycles = CACHE_READ_LATENCY;
-				return 0;
-			}else if (rf_cache.cache_entry[i].striken_cycles == 0){
-				return 1;
-			}else{
-				return 0;
-			}
-		}
-	}
-	return 0;
+int PhysicalRegisterFile::seu_availability(int index){
+	int avail = 0;
+	foreach (i, rf_cache.seu_buffer_p)
+		if (rf_cache.seu_buffer[i] == index)
+			avail = 1;
+	return avail;
 }
 
-int PhysicalRegisterFile::issue_striken(int index){
-	if (!index) 
-		return 1;
-	foreach (i, RF_CACHE_SIZE){
-		if (rf_cache.cache_entry[i].idx == index && rf_cache.cache_entry[i].striken)
-			if (rf_cache.cache_entry[i].striken_cycles == -2)
-				return 0;
+void PhysicalRegisterFile::seu_reset_buffer(){
+	foreach(i, rf_cache.seu_buffer_pn){
+		rf_cache.seu_buffer[i] = rf_cache.seu_buffer_next[i];
 	}
+	rf_cache.seu_buffer_p = rf_cache.seu_buffer_pn;
+	rf_cache.seu_buffer_pn = 0;
+}
+
+int PhysicalRegisterFile::seu_register(int index){
+	int bp = rf_cache.seu_buffer_pn;
+	foreach(i, bp)
+		if(rf_cache.seu_buffer_next[i] == index)
+			return 0;
+	rf_cache.seu_buffer_next[bp++] = index;
+	rf_cache.seu_buffer_pn = bp;
 	return 1;
 }
+
 
 
 namespace OOO_CORE_MODEL {
@@ -1031,6 +1020,9 @@ bool OooCore::runcycle(void* none) {
     }
 
     for_each_cluster(i) { issue(i); }
+
+	foreach(i, PHYS_REG_FILE_COUNT)
+		physregfiles[i].seu_reset_buffer();
 
     /*
      * Most of the frontend (except fetch!) also works with round robin priority

@@ -806,12 +806,15 @@ namespace OOO_CORE_MODEL {
     		W64 reference;
     		int valid;
 			int striken;
-			int striken_cycles;
     		ReorderBufferEntry* rob_in_cache;
     	};
 
 		struct struct_cache{
 			struct cache_entries cache_entry[RF_CACHE_SIZE];
+			int seu_buffer[RF_CACHE_SIZE];
+			int seu_buffer_p;
+			int seu_buffer_next[RF_CACHE_SIZE];
+			int seu_buffer_pn;
 			int cache_entry_occupancy;
 		}rf_cache;
 
@@ -859,10 +862,10 @@ namespace OOO_CORE_MODEL {
 
 		int SEU_gen();
 		void ins_seu(int candidate);
-		void tick_seu_cycles();
 		int is_striken(int index);
-		int striken_ready(int index);
-		int issue_striken(int index);
+		int seu_availability(int index);
+		void seu_reset_buffer();
+		int seu_register(int index);
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }
