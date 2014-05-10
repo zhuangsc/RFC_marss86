@@ -458,6 +458,7 @@ bool IssueQueue<size, operandcount>::replay(int slot, const tag_t* operands, con
             tags[operand].invalidateslot(slot);
         else tags[operand].insertslot(slot, operands[operand]);
 		tags_cached[operand].invalidateslot(slot);
+//		tags_cached[operand].insertslot(slot, operands[operand]);
     }
     return true;
 }
@@ -676,38 +677,38 @@ int ReorderBufferEntry::issue() {
     PhysicalRegister& rb = *operands[RB];
     PhysicalRegister& rc = *operands[RC];
 
-	int rep = 0;
-	if(core.physregfiles[ra.rfid].cache_activated() && core.physregfiles[ra.rfid].is_cached(ra.idx)){
-		if(core.physregfiles[ra.rfid].is_striken(ra.idx)){
-			if(!core.physregfiles[ra.rfid].seu_availability(ra.idx)){
-				core.physregfiles[ra.rfid].seu_register(ra.idx);
-				rep++;
-			}
-		}
-	}
-
-	if(core.physregfiles[rb.rfid].cache_activated() && core.physregfiles[rb.rfid].is_cached(rb.idx)){
-		if(core.physregfiles[rb.rfid].is_striken(rb.idx)){
-			if(!core.physregfiles[rb.rfid].seu_availability(rb.idx)){
-				core.physregfiles[rb.rfid].seu_register(rb.idx);
-				rep++;
-			}
-		}
-	}
-
-	if(core.physregfiles[rc.rfid].cache_activated() && core.physregfiles[rc.rfid].is_cached(rc.idx)){
-		if(core.physregfiles[rc.rfid].is_striken(rc.idx)){
-			if(!core.physregfiles[rc.rfid].seu_availability(rc.idx)){
-				core.physregfiles[rc.rfid].seu_register(rc.idx);
-				rep++;
-			}
-		}
-	}
-
-	if(rep){
-		replay();
-		return ISSUE_NEEDS_REPLAY;
-	}
+//	int rep = 0;
+//	if(core.physregfiles[ra.rfid].cache_activated() && core.physregfiles[ra.rfid].is_cached(ra.idx)){
+//		if(core.physregfiles[ra.rfid].is_striken(ra.idx)){
+//			if(!core.physregfiles[ra.rfid].seu_availability(ra.idx)){
+//				core.physregfiles[ra.rfid].seu_register(ra.idx);
+//				rep++;
+//			}
+//		}
+//	}
+//
+//	if(core.physregfiles[rb.rfid].cache_activated() && core.physregfiles[rb.rfid].is_cached(rb.idx)){
+//		if(core.physregfiles[rb.rfid].is_striken(rb.idx)){
+//			if(!core.physregfiles[rb.rfid].seu_availability(rb.idx)){
+//				core.physregfiles[rb.rfid].seu_register(rb.idx);
+//				rep++;
+//			}
+//		}
+//	}
+//
+//	if(core.physregfiles[rc.rfid].cache_activated() && core.physregfiles[rc.rfid].is_cached(rc.idx)){
+//		if(core.physregfiles[rc.rfid].is_striken(rc.idx)){
+//			if(!core.physregfiles[rc.rfid].seu_availability(rc.idx)){
+//				core.physregfiles[rc.rfid].seu_register(rc.idx);
+//				rep++;
+//			}
+//		}
+//	}
+//
+//	if(rep){
+//		replay();
+//		return ISSUE_NEEDS_REPLAY;
+//	}
 
 
     // FIXME : Failsafe operation. Sometimes an entry is issed even though its
