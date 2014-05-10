@@ -486,10 +486,14 @@ ostream& PhysicalRegisterFile::print(ostream& os) const {
     foreach (i, size) {
         os << (*this)[i], endl;
     }
-	os << "RegisterFile Cache Entry:", endl;
+	if(rfid == 0)
+		os << "RFC Entry (int)", endl;
+	if(rfid ==1)
+		os << "RFC Entry (fp)", endl;
 	foreach (i, RF_CACHE_SIZE){
 		os << "Entry: " , i , " Index: ", rf_cache.cache_entry[i].idx;
 		os << "  Reference: ", rf_cache.cache_entry[i].reference, " Valid: ", rf_cache.cache_entry[i].valid;
+		os << " Striken: ", rf_cache.cache_entry[i].striken;
 		os << " ROB: ", rf_cache.cache_entry[i].rob_in_cache, endl;
 	}
 	os << "RegisterFile Cache Bus Traffic:", endl;
@@ -501,6 +505,22 @@ ostream& PhysicalRegisterFile::print(ostream& os) const {
 		os << " RC: ", rf_cache_bus.bus_entry[i].index_RC;
 		os << endl;
 	}
+	if(rfid == 0)
+		os << "RFC Cache buffer (int)", endl;
+	if(rfid == 1)
+		os << "RFC Cache buffer (fp)", endl;
+		os << "SEU buffer: ", "Entries: ",rf_cache.seu_buffer_p, endl;
+	foreach (i, RF_CACHE_SIZE){
+		os << "SEU buffer entry: ", i, "Index: ", rf_cache.seu_buffer[i];
+		os << endl;
+	}
+
+		os << "SEU buffer next: ", "Entries: ",rf_cache.seu_buffer_pn, endl;
+	foreach (i, RF_CACHE_SIZE){
+		os << "SEU buffer entry: ", i, "Index: ", rf_cache.seu_buffer_next[i];
+		os << endl;
+	}
+
     return os;
 }
 
@@ -1021,8 +1041,8 @@ bool OooCore::runcycle(void* none) {
 
     for_each_cluster(i) { issue(i); }
 
-	foreach(i, PHYS_REG_FILE_COUNT)
-		physregfiles[i].seu_reset_buffer();
+//	foreach(i, PHYS_REG_FILE_COUNT)
+//		physregfiles[i].seu_reset_buffer();
 
     /*
      * Most of the frontend (except fetch!) also works with round robin priority
