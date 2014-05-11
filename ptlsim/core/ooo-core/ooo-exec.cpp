@@ -203,7 +203,6 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
 					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
 						(*core).physregfiles[rf_idx].seu_register(r_idx);
-//						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
 					}
 				}
 			}
@@ -249,7 +248,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 
 				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
 					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
-						(*core).physregfiles[rf_idx].seu_register(r_idx);
+//						(*core).physregfiles[rf_idx].seu_register(r_idx);
 						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
 					}
 				}
@@ -267,10 +266,6 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 		}
 	}
 	
-//	foreach (i, PHYS_REG_FILE_COUNT) {
-//		(*core).physregfiles[i].seu_reset_buffer();
-//	}
-
 	//Insert soft errors after clocking the rf cache
 	if (sim_cycle%10 == 0){
 		int candidate;
@@ -299,11 +294,14 @@ void IssueQueue<size, operandcount>::prefetch_first_pair(ReorderBufferEntry& rob
 			int rf_idx = ROB_IQ[i]->operands[operand]->rfid;
 			int idx = ROB_IQ[i]->operands[operand]->idx;
 			if(rf_idx == dest_rf && idx == dest_idx){
-				prefetch(ROB_IQ[i], rob);
-				found = 1;
+				if(!(*core).physregfiles[rf_idx].is_cached(idx)){
+					prefetch(ROB_IQ[i], rob);
+					found = 1;
+				}
 			}
 		}
-		if(found) break;
+		if(found) 
+			break;
 	}
 }
 
@@ -335,6 +333,8 @@ void IssueQueue<size, operandcount>::prefetch(ReorderBufferEntry* first_pair, Re
 	foreach(operand, operandcount-1){
 		rf_idx = first_pair->operands[operand]->rfid;
 		idx = first_pair->operands[operand]->idx;
+		if ((*core).physregfiles[rf_idx].is_cached(idx))
+			continue;
 		if (operand == n)
 			continue;
 		(*core).physregfiles[rf_idx].read_request(idx,RA_idx,RB_idx,RC_idx);
@@ -706,16 +706,15 @@ int ReorderBufferEntry::issue() {
 				rep++;
 				if (rc.state == PHYSREG_BYPASS) 
 					rep--;
-				if (!load_store_second_phase && isstore(uop.opcode))
-					rep--;
 			}
 		}
 	}
 
-	if(rep > 0){
-//		issueq_operation_on_cluster(core, cluster, replay(iqslot));
-		replay();
-		return ISSUE_NEEDS_REPLAY;
+	if(rep > 0) {
+		if (!(!load_store_second_phase && isstore(uop.opcode))){
+			replay();
+			return ISSUE_NEEDS_REPLAY;
+		}
 	}
 
 

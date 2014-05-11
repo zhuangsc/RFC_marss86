@@ -795,7 +795,7 @@ namespace OOO_CORE_MODEL {
         W64 allocations;
         W64 frees;
 
-     	static const int RF_CACHE_SIZE=8; //Register File Cache Size
+     	static const int RF_CACHE_SIZE=32; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
 		static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
     	int cache_enabled;

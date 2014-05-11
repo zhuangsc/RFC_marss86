@@ -657,11 +657,13 @@ void PhysicalRegisterFile::bus_entry_remove(){
 }
 
 void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
-	rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
-	rf_cache.cache_entry[entry].reference = sim_cycle;
-	rf_cache.cache_entry[entry].valid = 1;
-	rf_cache.cache_entry[entry].striken = 0;
-	rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
+//	if(!this->is_cached(idx)){
+		rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
+		rf_cache.cache_entry[entry].reference = sim_cycle;
+		rf_cache.cache_entry[entry].valid = 1;
+		rf_cache.cache_entry[entry].striken = 0;
+		rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
+//	}
 }
 
 void PhysicalRegisterFile::remove_cache_entry (int idx){
@@ -679,6 +681,8 @@ void PhysicalRegisterFile::remove_cache_entry (int idx){
 }
 
 void PhysicalRegisterFile::to_cache(int index, int writebacker){
+	if(this->is_cached(index))
+		return;
 	int slot;
 	writebacker_stats(writebacker);
 	if (rf_cache.cache_entry_occupancy < RF_CACHE_SIZE){
@@ -783,11 +787,15 @@ int PhysicalRegisterFile::seu_availability(int index){
 }
 
 void PhysicalRegisterFile::seu_reset_buffer(){
+	foreach(i, RF_CACHE_SIZE)
+		rf_cache.seu_buffer[i] = -1;
 	foreach(i, rf_cache.seu_buffer_pn){
 		rf_cache.seu_buffer[i] = rf_cache.seu_buffer_next[i];
 	}
 	rf_cache.seu_buffer_p = rf_cache.seu_buffer_pn;
 	rf_cache.seu_buffer_pn = 0;
+	foreach(i, RF_CACHE_SIZE)
+		rf_cache.seu_buffer_next[i] = -1;
 }
 
 int PhysicalRegisterFile::seu_register(int index){
