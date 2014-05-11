@@ -511,13 +511,13 @@ ostream& PhysicalRegisterFile::print(ostream& os) const {
 		os << "RFC Cache buffer (fp)", endl;
 		os << "SEU buffer: ", "Entries: ",rf_cache.seu_buffer_p, endl;
 	foreach (i, RF_CACHE_SIZE){
-		os << "SEU buffer entry: ", i, "Index: ", rf_cache.seu_buffer[i];
+		os << "SEU buffer entry: ", i, " Index: ", rf_cache.seu_buffer[i];
 		os << endl;
 	}
 
 		os << "SEU buffer next: ", "Entries: ",rf_cache.seu_buffer_pn, endl;
 	foreach (i, RF_CACHE_SIZE){
-		os << "SEU buffer entry: ", i, "Index: ", rf_cache.seu_buffer_next[i];
+		os << "SEU buffer entry: ", i, " Index: ", rf_cache.seu_buffer_next[i];
 		os << endl;
 	}
 
@@ -681,10 +681,12 @@ void PhysicalRegisterFile::remove_cache_entry (int idx){
 }
 
 void PhysicalRegisterFile::to_cache(int index, int writebacker){
-	if(this->is_cached(index))
-		return;
+
 	int slot;
 	writebacker_stats(writebacker);
+	if(this->is_cached(index))
+		return;
+
 	if (rf_cache.cache_entry_occupancy < RF_CACHE_SIZE){
 		foreach(i, RF_CACHE_SIZE){
 			if (!rf_cache.cache_entry[i].valid){
@@ -698,10 +700,12 @@ void PhysicalRegisterFile::to_cache(int index, int writebacker){
 		int ban_list_index=0;
 		foreach(i,RF_CACHE_SIZE){
 			slot=min_entry(ban_list,ban_list_index);
-			if(entry_valid(slot,index)) break;
+			if(entry_valid(slot,index)) 
+				break;
 			ban_list_index=ban_list_add(ban_list,slot,ban_list_index);
 		}
-		if (slot<0) return; //This should never be reached
+		if (slot<0) 
+			return; //This should never be reached
 		add_cache_entry(slot, index);
 	}
 }
@@ -807,6 +811,18 @@ int PhysicalRegisterFile::seu_register(int index){
 	rf_cache.seu_buffer_pn = bp;
 	return 1;
 }
+
+int PhysicalRegisterFile::seu_register(){
+	int bp = rf_cache.seu_buffer_pn;
+	foreach(i, RF_CACHE_SIZE){
+		if(rf_cache.cache_entry[i].striken){
+			rf_cache.seu_buffer_next[bp++] = rf_cache.cache_entry[i].idx;
+		}
+	}
+	rf_cache.seu_buffer_pn = bp;
+	return 1;
+}
+
 
 
 

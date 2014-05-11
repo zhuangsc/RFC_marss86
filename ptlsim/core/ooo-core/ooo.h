@@ -866,6 +866,7 @@ namespace OOO_CORE_MODEL {
 		int seu_availability(int index);
 		void seu_reset_buffer();
 		int seu_register(int index);
+		int seu_register();
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }

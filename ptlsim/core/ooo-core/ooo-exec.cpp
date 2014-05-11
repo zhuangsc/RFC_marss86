@@ -185,6 +185,7 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
     foreach (i, PHYS_REG_FILE_COUNT) {
 		(*core).physregfiles[i].seu_reset_buffer();
 		(*core).physregfiles[i].cache_tick();
+		(*core).physregfiles[i].seu_register();
 	}
 
     foreach(i,size){
@@ -200,11 +201,11 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			if ((*core).physregfiles[rf_idx].cache_activated()) {
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
 					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
-				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
-					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
-						(*core).physregfiles[rf_idx].seu_register(r_idx);
-					}
-				}
+//				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
+//					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
+//						(*core).physregfiles[rf_idx].seu_register(r_idx);
+//					}
+//				}
 			}
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
