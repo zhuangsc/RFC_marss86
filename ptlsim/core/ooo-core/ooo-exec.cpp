@@ -179,19 +179,36 @@ template <int size, int operandcount>
 void IssueQueue<size, operandcount>::clock_rf_cache(){
 
     int rf_idx,r_idx,others_waiting,r_idx_RA,r_idx_RB,r_idx_RC;
+	int rfid_RA, rfid_RB, rfid_RC;
 	int to_issue = 0;
 	
     //Tick the RF to RF-cache bus
     foreach (i, PHYS_REG_FILE_COUNT) {
 		(*core).physregfiles[i].seu_reset_buffer();
 		(*core).physregfiles[i].cache_tick();
-		(*core).physregfiles[i].seu_register();
+//		(*core).physregfiles[i].seu_register();
 	}
 
     foreach(i,size){
 
     	if (!valid[i] || ROB_IQ[i]==0 ) 
 			continue;
+		foreach (oper,operandcount){
+			switch (oper){
+				case RA:
+					r_idx_RA=ROB_IQ[i]->operands[oper]->idx;
+					rfid_RA = ROB_IQ[i]->operands[oper]->rfid;
+					break;
+				case RB:
+					r_idx_RB=ROB_IQ[i]->operands[oper]->idx;
+					rfid_RB = ROB_IQ[i]->operands[oper]->rfid;
+					break;
+				case RC:
+					r_idx_RC=ROB_IQ[i]->operands[oper]->idx;
+					rfid_RC = ROB_IQ[i]->operands[oper]->rfid;
+					break;
+			}
+		}
 
     	foreach (operand, operandcount){
 			PhysicalRegister* reg;
@@ -223,40 +240,83 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 		others_waiting=0;
 		foreach (operand,operandcount-1)
 			others_waiting += tags[operand].isvalid(i);
-		if (others_waiting) continue;
+		if (others_waiting) 
+			continue;
 
 		foreach (operand,operandcount){
 			rf_idx=ROB_IQ[i]->operands[operand]->rfid;
 			r_idx=ROB_IQ[i]->operands[operand]->idx;
 			if (tags_cached[operand].isvalid(i)){
-				foreach (oper,operandcount){
-					switch (oper){
-						case RA:
-							r_idx_RA=ROB_IQ[i]->operands[oper]->idx;
-							break;
-						case RB:
-							r_idx_RB=ROB_IQ[i]->operands[oper]->idx;
-							break;
-						case RC:
-							r_idx_RC=ROB_IQ[i]->operands[oper]->idx;
-							break;
-					}
-				}
+//				foreach (oper,operandcount){
+//					switch (oper){
+//						case RA:
+//							r_idx_RA=ROB_IQ[i]->operands[oper]->idx;
+//							rfid_RA = ROB_IQ[i]->operands[oper]->rfid;
+//							break;
+//						case RB:
+//							r_idx_RB=ROB_IQ[i]->operands[oper]->idx;
+//							rfid_RB = ROB_IQ[i]->operands[oper]->rfid;
+//							break;
+//						case RC:
+//							r_idx_RC=ROB_IQ[i]->operands[oper]->idx;
+//							rfid_RC = ROB_IQ[i]->operands[oper]->rfid;
+//							break;
+//					}
+//				}
 				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC))
 					tags_cached[operand].invalidateslot(i);
 				else
 					entry_cache_wait++;
 
-				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
-					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
-//						(*core).physregfiles[rf_idx].seu_register(r_idx);
-						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
-					}
-				}
+//				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
+//					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
+//						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+//					}
+//				}
 			}
 			if(!issued[i] && valid[i] && !entry_cache_wait) 
 				is_ready = 1;
 		}
+
+		if((*core).physregfiles[rfid_RA].is_striken(r_idx_RA)){
+			if(!(*core).physregfiles[rfid_RA].seu_availability(r_idx_RA)){
+				tags_cached[0].insertslot(i, ROB_IQ[i]->get_tag());
+				(*core).physregfiles[rfid_RA].seu_register(r_idx_RA);
+				(*core).physregfiles[rfid_RB].seu_register(r_idx_RB);
+				(*core).physregfiles[rfid_RC].seu_register(r_idx_RC);
+			}
+		}
+
+		if((*core).physregfiles[rfid_RB].is_striken(r_idx_RB)){
+			if(!(*core).physregfiles[rfid_RB].seu_availability(r_idx_RB)){
+				tags_cached[1].insertslot(i, ROB_IQ[i]->get_tag());
+				(*core).physregfiles[rfid_RA].seu_register(r_idx_RA);
+				(*core).physregfiles[rfid_RB].seu_register(r_idx_RB);
+				(*core).physregfiles[rfid_RC].seu_register(r_idx_RC);
+			}
+		}
+		if((*core).physregfiles[rfid_RC].is_striken(r_idx_RC)){
+			if(!(*core).physregfiles[rfid_RC].seu_availability(r_idx_RC)){
+				tags_cached[2].insertslot(i, ROB_IQ[i]->get_tag());
+				(*core).physregfiles[rfid_RA].seu_register(r_idx_RA);
+				(*core).physregfiles[rfid_RB].seu_register(r_idx_RB);
+				(*core).physregfiles[rfid_RC].seu_register(r_idx_RC);
+			}
+		}
+
+    	foreach (operand, operandcount){
+			PhysicalRegister* reg;
+			reg=ROB_IQ[i]->operands[operand];
+			rf_idx=reg->rfid;
+			r_idx=reg->idx;
+			
+			if (reg->state == PHYSREG_BYPASS || operand == RS)
+				tags_cached[operand].invalidateslot(i);
+			if (operand==RC)
+				if unlikely(isstore(ROB_IQ[i]->uop.opcode) && !ROB_IQ[i]->load_store_second_phase)
+					tags_cached[operand].invalidateslot(i);
+		}
+
 		if (is_ready) 
 			to_issue++;
 		if (to_issue <= MAX_ISSUE_WIDTH){

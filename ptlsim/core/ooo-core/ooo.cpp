@@ -423,6 +423,7 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
         (*this)[i].init(coreid, rfid, i, core, CACHE_READ_LATENCY);
     }
 
+	//Rest RFC entries
 	this->rf_cache.cache_entry_occupancy = 0;
     foreach (i, RF_CACHE_SIZE){
 		this->rf_cache.cache_entry[i].idx = -1;
@@ -432,6 +433,7 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 		this->rf_cache.cache_entry[i].striken = 0;
 	}
 
+	//Reset RF-RFC buses
 	this->rf_cache_bus.request_on_the_fly = 0;
 	foreach (i, RF_CACHE_BANDWIDTH){
 		this->rf_cache_bus.bus_entry[i].idx = -1;
@@ -442,13 +444,15 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 		this->rf_cache_bus.remove_pool[i] = -1;
 	}
 
-	//Set the seed for SEU generator
-	foreach (i, RF_CACHE_SIZE){
+	//Reset SEU handle structure
+	foreach (i, SEU_BANDWIDTH){
 		this->rf_cache.seu_buffer[i] = -1;
 		this->rf_cache.seu_buffer_next[i] = -1;
 	}
 	this->rf_cache.seu_buffer_p = 0;
 	this->rf_cache.seu_buffer_pn = 0;
+
+	//Set the seed for SEU generator
 	srand(time(0));
 }
 
@@ -510,13 +514,13 @@ ostream& PhysicalRegisterFile::print(ostream& os) const {
 	if(rfid == 1)
 		os << "RFC Cache buffer (fp)", endl;
 		os << "SEU buffer: ", "Entries: ",rf_cache.seu_buffer_p, endl;
-	foreach (i, RF_CACHE_SIZE){
+	foreach (i, SEU_BANDWIDTH){
 		os << "SEU buffer entry: ", i, " Index: ", rf_cache.seu_buffer[i];
 		os << endl;
 	}
 
 		os << "SEU buffer next: ", "Entries: ",rf_cache.seu_buffer_pn, endl;
-	foreach (i, RF_CACHE_SIZE){
+	foreach (i, SEU_BANDWIDTH){
 		os << "SEU buffer entry: ", i, " Index: ", rf_cache.seu_buffer_next[i];
 		os << endl;
 	}
@@ -739,7 +743,8 @@ int PhysicalRegisterFile::ban_list_add(int* ban_list, int index, int ban_list_in
 }
 
 int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
-	if (outgoing_entry<0) return 0;
+	if (outgoing_entry<0) 
+		return 0;
 	int match=0,result;
 	foreach (i, RF_CACHE_BANDWIDTH){
 		if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].idx)
@@ -804,6 +809,8 @@ void PhysicalRegisterFile::seu_reset_buffer(){
 
 int PhysicalRegisterFile::seu_register(int index){
 	int bp = rf_cache.seu_buffer_pn;
+	if(!is_striken(index) || bp == SEU_BANDWIDTH)
+		return 0;
 	foreach(i, bp)
 		if(rf_cache.seu_buffer_next[i] == index)
 			return 0;
