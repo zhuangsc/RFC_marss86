@@ -796,14 +796,14 @@ int PhysicalRegisterFile::seu_availability(int index){
 }
 
 void PhysicalRegisterFile::seu_reset_buffer(){
-	foreach(i, RF_CACHE_SIZE)
+	foreach(i, SEU_BANDWIDTH)
 		rf_cache.seu_buffer[i] = -1;
 	foreach(i, rf_cache.seu_buffer_pn){
 		rf_cache.seu_buffer[i] = rf_cache.seu_buffer_next[i];
 	}
 	rf_cache.seu_buffer_p = rf_cache.seu_buffer_pn;
 	rf_cache.seu_buffer_pn = 0;
-	foreach(i, RF_CACHE_SIZE)
+	foreach(i, SEU_BANDWIDTH)
 		rf_cache.seu_buffer_next[i] = -1;
 }
 

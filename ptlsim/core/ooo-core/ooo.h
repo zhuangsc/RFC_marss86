@@ -798,7 +798,7 @@ namespace OOO_CORE_MODEL {
      	static const int RF_CACHE_SIZE=32; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
 		static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
-		static const int SEU_BANDWIDTH = 2;
+		static const int SEU_BANDWIDTH = RF_CACHE_BANDWIDTH;
     	int cache_enabled;
 		
 
@@ -812,9 +812,9 @@ namespace OOO_CORE_MODEL {
 
 		struct struct_cache{
 			struct cache_entries cache_entry[RF_CACHE_SIZE];
-			int seu_buffer[RF_CACHE_SIZE];
+			int seu_buffer[SEU_BANDWIDTH];
 			int seu_buffer_p;
-			int seu_buffer_next[RF_CACHE_SIZE];
+			int seu_buffer_next[SEU_BANDWIDTH];
 			int seu_buffer_pn;
 			int cache_entry_occupancy;
 		}rf_cache;
