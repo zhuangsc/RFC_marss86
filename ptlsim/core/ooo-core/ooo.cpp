@@ -608,7 +608,8 @@ int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int i
 		if (rf_cache_bus.bus_entry[i].idx == index)
 			return rf_cache_bus.bus_entry[i].latency;
 	//Not of the above cases, issue the request
-	if(rf_cache_bus.request_on_the_fly < RF_CACHE_BANDWIDTH){
+//	if(rf_cache_bus.request_on_the_fly < RF_CACHE_BANDWIDTH){
+	if (!rfc_bus_saturated()){
 		bus_entry_insert(index,index_RA,index_RB,index_RC);
 		return CACHE_READ_LATENCY;
 	}
@@ -808,6 +809,8 @@ void PhysicalRegisterFile::seu_reset_buffer(){
 }
 
 int PhysicalRegisterFile::seu_register(int index){
+	if (rfc_bus_saturated())
+		return 0;
 	int bp = rf_cache.seu_buffer_pn;
 	if(!is_striken(index) || bp == SEU_BANDWIDTH)
 		return 0;

@@ -218,11 +218,6 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			if ((*core).physregfiles[rf_idx].cache_activated()) {
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
 					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
-//				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
-//					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
-//						(*core).physregfiles[rf_idx].seu_register(r_idx);
-//					}
-//				}
 			}
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
@@ -247,32 +242,11 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			rf_idx=ROB_IQ[i]->operands[operand]->rfid;
 			r_idx=ROB_IQ[i]->operands[operand]->idx;
 			if (tags_cached[operand].isvalid(i)){
-//				foreach (oper,operandcount){
-//					switch (oper){
-//						case RA:
-//							r_idx_RA=ROB_IQ[i]->operands[oper]->idx;
-//							rfid_RA = ROB_IQ[i]->operands[oper]->rfid;
-//							break;
-//						case RB:
-//							r_idx_RB=ROB_IQ[i]->operands[oper]->idx;
-//							rfid_RB = ROB_IQ[i]->operands[oper]->rfid;
-//							break;
-//						case RC:
-//							r_idx_RC=ROB_IQ[i]->operands[oper]->idx;
-//							rfid_RC = ROB_IQ[i]->operands[oper]->rfid;
-//							break;
-//					}
-//				}
 				if(!(*core).physregfiles[rf_idx].read_request(r_idx,r_idx_RA,r_idx_RB,r_idx_RC))
 					tags_cached[operand].invalidateslot(i);
 				else
 					entry_cache_wait++;
 
-//				if ((*core).physregfiles[rf_idx].is_striken(r_idx)){
-//					if (!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
-//						tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
-//					}
-//				}
 			}
 			if(!issued[i] && valid[i] && !entry_cache_wait) 
 				is_ready = 1;

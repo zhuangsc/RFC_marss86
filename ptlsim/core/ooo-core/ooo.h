@@ -868,6 +868,8 @@ namespace OOO_CORE_MODEL {
 		void seu_reset_buffer();
 		int seu_register(int index);
 		int seu_register();
+		int rfc_bus_bandwidth(){return (rf_cache_bus.request_on_the_fly + rf_cache.seu_buffer_pn);}
+		int rfc_bus_saturated(){return (rfc_bus_bandwidth() >= RF_CACHE_BANDWIDTH);}
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }
