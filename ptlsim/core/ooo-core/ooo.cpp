@@ -595,6 +595,8 @@ void PhysicalRegisterFile::read_cache(int index) {
 }
 
 int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int index_RC){ 
+	if (rfc_bus_saturated())
+		return 101;
 	if (!cache_activated()) 
 		return 100; //Should never be reached, arbitrary number
 	//At stage : writeback 1
