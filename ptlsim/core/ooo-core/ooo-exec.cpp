@@ -217,7 +217,9 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 			r_idx=reg->idx;
 			if ((*core).physregfiles[rf_idx].cache_activated()) {
 				if (!(*core).physregfiles[rf_idx].is_cached(r_idx))
-					tags_cached[operand].insertslot(i,ROB_IQ[i]->get_tag());
+					tags_cached[operand].insertslot(i, ROB_IQ[i]->get_tag());
+				else if ((*core).physregfiles[rf_idx].is_striken(r_idx))
+					tags_cached[operand].insertslot(i, ROB_IQ[i]->get_tag());
 			}
 			
 			if (reg->state == PHYSREG_BYPASS || operand == RS)
