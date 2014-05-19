@@ -807,6 +807,7 @@ namespace OOO_CORE_MODEL {
     		W64 reference;
     		int valid;
 			int striken;
+			int striken_read;
     		ReorderBufferEntry* rob_in_cache;
     	};
 
@@ -870,6 +871,7 @@ namespace OOO_CORE_MODEL {
 		int seu_register();
 		int rfc_bus_occupancy(){return (rf_cache_bus.request_on_the_fly + rf_cache.seu_buffer_pn);}
 		int rfc_bus_saturated(){return (rfc_bus_occupancy() == RF_CACHE_BANDWIDTH);}
+		void striken_read(int index);
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }

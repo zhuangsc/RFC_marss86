@@ -581,6 +581,7 @@ namespace OOO_CORE_MODEL {
 			  , uop_all_operand("Uop_operands", this, uop_all_operand_status)
 			  , uop_1operand("Uop_1_operand", this, uop_1operand_status)
 			  , uop_2operand("Uop_2_operand", this, uop_2operand_status)
+//			  , seu_read("Striken Cell Read", this, seu_read_status)
 			  , rob_reads("rob_reads", this)
 			  , rob_writes("rob_writes", this)
 			  , rename_table_reads("rename_table_reads", this)
@@ -727,6 +728,9 @@ namespace OOO_CORE_MODEL {
 		StatObj<W64> iq_cache_waiting;
 		StatObj<W64> iq_cache_no_waiting;
 
+		StatObj<W64> seu_striken_read;
+		StatObj<W64> seu_striken_no_read;
+
 		OooCoreStats(const char *name, Statable *parent)
 			: dispatch(parent)
 			  , issue(parent)
@@ -739,6 +743,8 @@ namespace OOO_CORE_MODEL {
 			  , iq_fp_writes("iq_fp_writes", parent)
 			  , iq_cache_waiting("iq_cache_waiting", parent)
 			  , iq_cache_no_waiting("iq_cache_no_waiting", parent)
+			  , seu_striken_read("seu_striken_read", parent)
+			  , seu_striken_no_read("seu_striken_no_read", parent)
 		{ }
     };
 

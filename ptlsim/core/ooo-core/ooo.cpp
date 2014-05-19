@@ -68,6 +68,7 @@ namespace OOO_CORE_MODEL {
 	const char* uop_all_operand_status[4]={"0_operand", "1_operand", "2_operands", "3_or_more_operands"};
 	const char* uop_1operand_status[2]={"From_bypass", "From_RF"};
 	const char* uop_2operand_status[3]={"Mixed", "All_from_RF", "All_from_bypass"};
+//	const char* seu_read_status[2] = {"Read", "Not_read"};
 	//const char* cache_waiting_status{"NO_WAITING", "WAITING"};
 
     const char* fu_names[FU_COUNT] = {
@@ -389,8 +390,8 @@ void PhysicalRegister::free(){
 	register_available = 1;
 	all_consumers_sourced_from_bypass=1;
 	flags = flags & ~(FLAG_INV | FLAG_WAIT);
-	if(this->core->physregfiles[rfid].is_cached(idx))
-		this->core->physregfiles[rfid].remove_cache_entry(idx);
+//	if(this->core->physregfiles[rfid].is_cached(idx))
+//		this->core->physregfiles[rfid].remove_cache_entry(idx);
 }
 
 /**
@@ -431,6 +432,7 @@ void PhysicalRegisterFile::init(const char* name, W8 coreid, int rfid, int size,
 		this->rf_cache.cache_entry[i].valid = 0;
 		this->rf_cache.cache_entry[i].rob_in_cache = 0;
 		this->rf_cache.cache_entry[i].striken = 0;
+		this->rf_cache.cache_entry[i].striken_read = 0;
 	}
 
 	//Reset RF-RFC buses
@@ -664,22 +666,31 @@ void PhysicalRegisterFile::bus_entry_remove(){
 }
 
 void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
-//	if(!this->is_cached(idx)){
-		rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
-		rf_cache.cache_entry[entry].reference = sim_cycle;
-		rf_cache.cache_entry[entry].valid = 1;
-		rf_cache.cache_entry[entry].striken = 0;
-		rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
-//	}
+	if (rf_cache.cache_entry[entry].striken && rf_cache.cache_entry[entry].striken_read)
+		(*core).core_stats.seu_striken_read++;
+	else
+		(*core).core_stats.seu_striken_no_read++;
+	rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
+	rf_cache.cache_entry[entry].reference = sim_cycle;
+	rf_cache.cache_entry[entry].valid = 1;
+	rf_cache.cache_entry[entry].striken = 0;
+	rf_cache.cache_entry[entry].striken_read = 0;
+	rf_cache.cache_entry[entry].rob_in_cache = (*this)[idx].rob;
 }
 
 void PhysicalRegisterFile::remove_cache_entry (int idx){
 	foreach(i, RF_CACHE_SIZE){
 		if (rf_cache.cache_entry[i].idx == idx){
+			if (rf_cache.cache_entry[i].striken && rf_cache.cache_entry[i].striken_read)
+				(*core).core_stats.seu_striken_read++;
+			else
+				(*core).core_stats.seu_striken_no_read++;
+
 			rf_cache.cache_entry[i].valid = 0;
 			rf_cache.cache_entry[i].reference = 0;
 			rf_cache.cache_entry[i].idx = -1;
 			rf_cache.cache_entry[i].striken = 0;
+			rf_cache.cache_entry[i].striken_read = 0;
 			rf_cache.cache_entry[i].rob_in_cache = 0;
 			if (rf_cache.cache_entry_occupancy > 0)
 				rf_cache.cache_entry_occupancy--;
@@ -833,6 +844,15 @@ int PhysicalRegisterFile::seu_register(){
 	}
 	rf_cache.seu_buffer_pn = bp;
 	return 1;
+}
+
+void PhysicalRegisterFile::striken_read(int index){
+	foreach(i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].idx == index){
+			rf_cache.cache_entry[i].striken_read = 1;
+			break;
+		}
+	}
 }
 
 
