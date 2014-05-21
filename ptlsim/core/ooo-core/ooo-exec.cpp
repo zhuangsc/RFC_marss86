@@ -250,12 +250,11 @@ void IssueQueue<size, operandcount>::clock_rf_cache(){
 				}
 
 				if((*core).physregfiles[rf_idx].is_striken(r_idx)){
-					if(!(*core).physregfiles[rf_idx].seu_availability(r_idx)){
+					(*core).physregfiles[rfid_RA].seu_register(r_idx_RA);
+					(*core).physregfiles[rfid_RB].seu_register(r_idx_RB);
+					(*core).physregfiles[rfid_RC].seu_register(r_idx_RC);
+					if(!(*core).physregfiles[rf_idx].seu_availability(r_idx))
 						tags_cached[operand].insertslot(i, ROB_IQ[i]->get_tag());
-						(*core).physregfiles[rfid_RA].seu_register(r_idx_RA);
-						(*core).physregfiles[rfid_RB].seu_register(r_idx_RB);
-						(*core).physregfiles[rfid_RC].seu_register(r_idx_RC);
-					}
 				}
 			}
 			if(!issued[i] && valid[i] && !entry_cache_wait) 

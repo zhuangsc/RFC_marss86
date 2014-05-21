@@ -824,6 +824,8 @@ void PhysicalRegisterFile::seu_reset_buffer(){
 }
 
 int PhysicalRegisterFile::seu_register(int index){
+	if (!index)
+		return 0;
 	if (rfc_bus_saturated())
 		return 0;
 	int bp = rf_cache.seu_buffer_pn;
