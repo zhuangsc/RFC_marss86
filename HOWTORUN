@@ -2,6 +2,6 @@ qemu/qemu-system-x86_64 -m 2G -serial pty -nographic -drive cache=unsafe,file=..
 
 gdb -x gdbrun -args qemu/qemu-system-x86_64 -m 2G -serial pty -nographic -drive cache=unsafe,file=../parsecROI.qcow2 -simconfig simulate.cfg -loadvm facesim -snapshot
 
-qemu/qemu-system-x86_64 -m 2G -serial pty -nographic -drive cache=unsafe,file=../spec06-quantal.qcow2 -simconfig simulate.cfg -loadvm perl -snapshot
+qemu/qemu-system-x86_64 -m 2G -serial pty -nographic -drive cache=unsafe,file=../spec06-quantal.qcow2 -simconfig simulate.cfg -loadvm gcc -snapshot
 
-qemu/qemu-system-x86_64 -m 2G -serial pty -nographic -drive cache=unsafe,file=../spec06-quantal.qcow2 -simconfig simpoint.cfg -loadvm perl -snapshot
+qemu/qemu-system-x86_64 -m 2G -serial pty -nographic -drive cache=unsafe,file=../spec06-quantal.qcow2 -simconfig simpoint.cfg -loadvm gcc -snapshot

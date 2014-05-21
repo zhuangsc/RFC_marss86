@@ -597,16 +597,18 @@ void PhysicalRegisterFile::read_cache(int index) {
 }
 
 int PhysicalRegisterFile::read_request(int index,int index_RA,int index_RB,int index_RC){ 
-	if (rfc_bus_saturated())
-		return 101;
 	if (!cache_activated()) 
 		return 100; //Should never be reached, arbitrary number
 	//At stage : writeback 1
 	if ((*this)[index].state == PHYSREG_WRITTEN && !(*this)[index].register_available)
 		return CACHE_READ_LATENCY;
 	//Already at the RF-cache
-	if (is_cached(index))
+	if (is_cached(index)){
+		read_cache(index);
 		return 0;
+	}
+//	if (rfc_bus_saturated())
+//		return 101;
 	//Already in transmission, return the cycles left to complete
 	foreach (i, RF_CACHE_BANDWIDTH)
 		if (rf_cache_bus.bus_entry[i].idx == index)
