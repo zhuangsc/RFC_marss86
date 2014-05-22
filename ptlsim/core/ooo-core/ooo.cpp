@@ -668,10 +668,14 @@ void PhysicalRegisterFile::bus_entry_remove(){
 }
 
 void PhysicalRegisterFile::add_cache_entry (int entry, int idx){
-	if (rf_cache.cache_entry[entry].striken && rf_cache.cache_entry[entry].striken_read)
-		(*core).core_stats.seu_striken_read++;
-	else
-		(*core).core_stats.seu_striken_no_read++;
+
+	if (rf_cache.cache_entry[entry].striken){
+		if (rf_cache.cache_entry[entry].striken_read)
+			(*core).core_stats.seu_striken_read++;
+		else
+			(*core).core_stats.seu_striken_no_read++;
+	}
+
 	rf_cache.cache_entry[entry].idx = (*this)[idx].idx;
 	rf_cache.cache_entry[entry].reference = sim_cycle;
 	rf_cache.cache_entry[entry].valid = 1;

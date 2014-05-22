@@ -785,7 +785,9 @@ int ReorderBufferEntry::issue() {
                rc.rfid, [rc.state]++);
     }
 
-	//Record the reading fowarded from RF
+	/*
+	 * Record the reading forwarded by the RF itself
+	*/
 	if(core.physregfiles[ra.rfid].is_striken(ra.idx)){
 		if(core.physregfiles[ra.rfid].seu_availability(ra.idx)){
 			core.physregfiles[ra.rfid].striken_read(ra.idx);
