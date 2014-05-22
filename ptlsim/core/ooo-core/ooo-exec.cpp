@@ -786,27 +786,21 @@ int ReorderBufferEntry::issue() {
     }
 
 	//Record the reading fowarded from RF
-	if(core.physregfiles[ra.rfid].cache_activated() && core.physregfiles[ra.rfid].is_cached(ra.idx)){
-		if(core.physregfiles[ra.rfid].is_striken(ra.idx)){
-			if(core.physregfiles[ra.rfid].seu_availability(ra.idx)){
-				core.physregfiles[ra.rfid].striken_read(ra.idx);
-			}
+	if(core.physregfiles[ra.rfid].is_striken(ra.idx)){
+		if(core.physregfiles[ra.rfid].seu_availability(ra.idx)){
+			core.physregfiles[ra.rfid].striken_read(ra.idx);
 		}
 	}
 
-	if(core.physregfiles[rb.rfid].cache_activated() && core.physregfiles[rb.rfid].is_cached(rb.idx)){
-		if(core.physregfiles[rb.rfid].is_striken(rb.idx)){
-			if(core.physregfiles[rb.rfid].seu_availability(rb.idx)){
-				core.physregfiles[rb.rfid].striken_read(rb.idx);
-			}
+	if(core.physregfiles[rb.rfid].is_striken(rb.idx)){
+		if(core.physregfiles[rb.rfid].seu_availability(rb.idx)){
+			core.physregfiles[rb.rfid].striken_read(rb.idx);
 		}
 	}
 
-	if(core.physregfiles[rc.rfid].cache_activated() && core.physregfiles[rc.rfid].is_cached(rc.idx)){
-		if(core.physregfiles[rc.rfid].is_striken(rc.idx)){
-			if(core.physregfiles[rc.rfid].seu_availability(rc.idx)){
-				core.physregfiles[rc.rfid].striken_read(rc.idx);
-			}
+	if(core.physregfiles[rc.rfid].is_striken(rc.idx)){
+		if(core.physregfiles[rc.rfid].seu_availability(rc.idx)){
+			core.physregfiles[rc.rfid].striken_read(rc.idx);
 		}
 	}
 
