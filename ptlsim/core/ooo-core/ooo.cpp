@@ -728,8 +728,8 @@ void PhysicalRegisterFile::to_cache(int index, int writebacker){
 				break;
 			ban_list_index=ban_list_add(ban_list,slot,ban_list_index);
 		}
-		if (slot<0) 
-			return; //This should never be reached
+		if (rf_cache.cache_entry[slot].reference == sim_cycle || slot < 0)
+			return;
 		add_cache_entry(slot, index);
 	}
 }
@@ -763,7 +763,7 @@ int PhysicalRegisterFile::ban_list_add(int* ban_list, int index, int ban_list_in
 }
 
 int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
-	if (outgoing_entry<0) 
+	if (outgoing_entry<0 || rf_cache.cache_entry[outgoing_entry].reference == sim_cycle) 
 		return 0;
 	int match=0,result;
 	foreach (i, RF_CACHE_BANDWIDTH){
