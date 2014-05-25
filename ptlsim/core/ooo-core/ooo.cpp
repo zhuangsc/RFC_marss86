@@ -496,6 +496,7 @@ ostream& PhysicalRegisterFile::print(ostream& os) const {
 		os << "RFC Entry (int)", endl;
 	if(rfid ==1)
 		os << "RFC Entry (fp)", endl;
+	os << "Stop cycle: ", sim_cycle, endl;
 	foreach (i, RF_CACHE_SIZE){
 		os << "Entry: " , i , " Index: ", rf_cache.cache_entry[i].idx;
 		os << "  Reference: ", rf_cache.cache_entry[i].reference, " Valid: ", rf_cache.cache_entry[i].valid;
@@ -728,7 +729,7 @@ void PhysicalRegisterFile::to_cache(int index, int writebacker){
 				break;
 			ban_list_index=ban_list_add(ban_list,slot,ban_list_index);
 		}
-		if (rf_cache.cache_entry[slot].reference == sim_cycle || slot < 0)
+		if (slot < 0)//rf_cache.cache_entry[slot].reference == sim_cycle || slot < 0)
 			return;
 		add_cache_entry(slot, index);
 	}
@@ -763,9 +764,19 @@ int PhysicalRegisterFile::ban_list_add(int* ban_list, int index, int ban_list_in
 }
 
 int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
-	if (outgoing_entry<0 || rf_cache.cache_entry[outgoing_entry].reference == sim_cycle) 
+	if (outgoing_entry<0)// || rf_cache.cache_entry[outgoing_entry].reference == sim_cycle) 
 		return 0;
 	int match=0,result;
+
+//	if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[incoming_entry].idx)
+//		match++;
+//	if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[incoming_entry].index_RA)
+//		match++;
+//	if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[incoming_entry].index_RB)
+//		match++;
+//	if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[incoming_entry].index_RC)
+//		match++;
+
 	foreach (i, RF_CACHE_BANDWIDTH){
 		if (rf_cache.cache_entry[outgoing_entry].idx == rf_cache_bus.bus_entry[i].idx)
 			match++;
@@ -778,6 +789,7 @@ int PhysicalRegisterFile::entry_valid(int outgoing_entry, int incoming_entry){
 		if (match)
 			break;
 	}
+
 	result = match?0:1;
 	return result;
 }
