@@ -1,3 +1,1 @@
 handle SIGUSR1 SIGUSR2 nostop noprint
-b ooo.cpp:632
-info b

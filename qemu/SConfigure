@@ -78,7 +78,7 @@ custom_tests['CheckXenLibs'] = CheckXenLibs
 
 def CheckSDLX11Driver(context):
     check_sdl_src = """
-    #include <SDL.h>
+    #include <SDL/SDL.h>
     #if defined(SDL_VIDEO_DRIVER_X11)
     #include <X11/XKBlib.h>
     #else
@@ -617,7 +617,7 @@ sdl = None
 sdl_static = None
 
 try:
-    pared = env.ParseConfig("sdl-config --cflags --libs --static-libs")
+    pared = env.ParseConfig("sdl-config --cflags --libs")
     env['sdl'] = True
 except OSError:
     env['sdl'] = False

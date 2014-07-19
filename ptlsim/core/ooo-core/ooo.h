@@ -804,6 +804,9 @@ namespace OOO_CORE_MODEL {
 
         OooCore& getcore() { return *core; }
 
+		int rf_in_risk(int i);
+		int rf_check_ace();
+
         private:
         void reset();
 

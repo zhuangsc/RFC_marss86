@@ -437,6 +437,26 @@ bool PhysicalRegisterFile::cleanup() {
     return (freed > 0);
 }
 
+int PhysicalRegisterFile::rf_in_risk(int i){
+	int risk = 1;
+	int s = (*this)[i].state;
+	if(s < PHYSREG_WRITTEN || s > PHYSREG_PENDINGFREE)
+		risk = 0;
+	return risk;
+}
+
+int PhysicalRegisterFile::rf_check_ace(){
+	int S = (*this).size;
+	int n = 0;
+	foreach (i, S){
+		if ((*this).rf_in_risk(i)){
+			n++;
+		}
+	}
+	return n;
+}
+
+
 void PhysicalRegisterFile::reset() {
     foreach (i, MAX_PHYSREG_STATE) {
         states[i].reset();
@@ -541,6 +561,8 @@ bool OooCore::runcycle(void* none) {
         } else {
             thread->thread_stats.set_default_stats(user_stats);
         }
+		CORE_STATS(rf_ace_int)+=physregfiles[0].rf_check_ace();
+		CORE_STATS(rf_ace_fp)+=physregfiles[1].rf_check_ace();
     }
 
      /*
