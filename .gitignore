@@ -64,3 +64,5 @@ gdb.txt
 *.patch
 
 qemu/*
+**/*.log
+**/*.yml
