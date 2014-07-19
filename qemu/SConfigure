@@ -617,7 +617,7 @@ sdl = None
 sdl_static = None
 
 try:
-    pared = env.ParseConfig("sdl-config --cflags --libs --static-libs")
+    pared = env.ParseConfig("sdl-config --cflags --libs")
     env['sdl'] = True
 except OSError:
     env['sdl'] = False

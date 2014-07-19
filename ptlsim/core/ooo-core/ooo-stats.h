@@ -727,9 +727,10 @@ namespace OOO_CORE_MODEL {
 		StatObj<W64> iq_fp_writes;
 		StatObj<W64> iq_cache_waiting;
 		StatObj<W64> iq_cache_no_waiting;
-
 		StatObj<W64> seu_striken_read;
 		StatObj<W64> seu_striken_no_read;
+		StatObj<W64> rfc_ace_int;
+		StatObj<W64> rfc_ace_fp;
 
 		OooCoreStats(const char *name, Statable *parent)
 			: dispatch(parent)
@@ -745,6 +746,8 @@ namespace OOO_CORE_MODEL {
 			  , iq_cache_no_waiting("iq_cache_no_waiting", parent)
 			  , seu_striken_read("seu_striken_read", parent)
 			  , seu_striken_no_read("seu_striken_no_read", parent)
+			  , rfc_ace_int("rfc_ace_int", parent)
+			  , rfc_ace_fp("rfc_ace_fp", parent)
 		{ }
     };
 

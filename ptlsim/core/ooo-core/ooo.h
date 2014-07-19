@@ -797,7 +797,7 @@ namespace OOO_CORE_MODEL {
 
      	static const int RF_CACHE_SIZE=8; //Register File Cache Size
     	static const int CACHE_READ_LATENCY=1; //Latency
-		static const int RF_CACHE_BANDWIDTH=8; //Buses between the RF and RF Cache
+		static const int RF_CACHE_BANDWIDTH=2; //Buses between the RF and RF Cache
 		static const int SEU_BANDWIDTH = RF_CACHE_BANDWIDTH;
     	int cache_enabled;
 		
@@ -872,6 +872,8 @@ namespace OOO_CORE_MODEL {
 		int rfc_bus_occupancy(){return (rf_cache_bus.request_on_the_fly + rf_cache.seu_buffer_pn);}
 		int rfc_bus_saturated(){return (rfc_bus_occupancy() == RF_CACHE_BANDWIDTH);}
 		void striken_read(int index);
+		int rfc_in_risk(int i);
+		void rfc_check_ace();
 
         void init(const char* name, W8 coreid, int rfid, int size, OooCore* core);
         // bool remaining() const { return (!states[PHYSREG_FREE].empty()); }

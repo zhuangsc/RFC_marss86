@@ -875,6 +875,26 @@ void PhysicalRegisterFile::striken_read(int index){
 	}
 }
 
+int PhysicalRegisterFile::rfc_in_risk(int i){
+	int risk = 1;
+	int s = (*this)[i].state;
+	if(s < PHYSREG_WRITTEN || s > PHYSREG_PENDINGFREE)
+		risk = 0;
+	return risk;
+}
+
+void PhysicalRegisterFile::rfc_check_ace(){
+	foreach (i, RF_CACHE_SIZE){
+		if (rf_cache.cache_entry[i].valid && (*this).rfc_in_risk(i)){
+			if (this->rfid == 0)
+				this->core->core_stats.rfc_ace_int++;
+			if (this->rfid == 1)
+				this->core->core_stats.rfc_ace_fp++;
+		}
+	}
+
+}
+
 
 
 
@@ -974,6 +994,8 @@ bool OooCore::runcycle(void* none) {
 		rf_buses = physregfiles[1].rf_cache_bus.request_on_the_fly;
 		thread->thread_stats.int_cache_buses[int_buses]++;
 		thread->thread_stats.fp_cache_buses[rf_buses]++;
+		physregfiles[0].rfc_check_ace();
+		physregfiles[1].rfc_check_ace();
     }
 
      /*
