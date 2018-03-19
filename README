@@ -1,4 +1,5 @@
 RFC - Register File Cache implementation on Marss86
 
 Reference:
-José-Lorenzo Cruz, Antonio González, Mateo Valero, and Nigel P. Topham. 2000. Multiple-banked register file architectures. SIGARCH Comput. Archit. News 28, 2 (May 2000), 316-325. DOI: https://doi.org/10.1145/342001.339708
+1. José-Lorenzo Cruz, Antonio González, Mateo Valero, and Nigel P. Topham. 2000. Multiple-banked register file architectures. SIGARCH Comput. Archit. News 28, 2 (May 2000), 316-325. DOI: https://doi.org/10.1145/342001.339708
+2. Avadh Patel, Furat Afram, Shunfei Chen, and Kanad Ghose. 2011. MARSS: a full system simulator for multicore x86 CPUs. In Proceedings of the 48th Design Automation Conference (DAC '11). ACM, New York, NY, USA, 1050-1055. DOI=http://dx.doi.org/10.1145/2024724.2024954
